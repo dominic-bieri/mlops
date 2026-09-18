@@ -6,7 +6,7 @@
 #align(center)[
   #text(size: 18pt, weight: "bold")[Project Proposal]
   #v(0.3em)
-  #text(size: 12pt)[MLOps - HS26]
+  #text(size: 12pt)[MLOPS - HS26]
   #v(0.1em)
   #text(size: 10pt)[Dominic Bieri]
 ]
