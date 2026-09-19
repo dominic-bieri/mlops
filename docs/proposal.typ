@@ -26,6 +26,15 @@ Also compared against the VIX, an index reflecting the market's own volatility e
 
 = Originality & motivation
 
+I have a personal interest in financial markets and investing, especially in looking at the overall market rather than individual stocks or crypto.
+That's what led me to this project.
+Most finance projects try to predict price direction, but that's close to a random walk and very hard for a model to get right, especially for a student project.
+Volatility behaves differently. Calm and turbulent periods tend to cluster, so it's a more realistic pattern to actually learn.
+That's why I focus on volatility instead of price direction, and it's still directly useful for risk management and for investors deciding when to buy during a sell-off.
+
+It's also benchmarked directly against the VIX, the market's own volatility forecast.
+So the real question becomes whether the model adds anything beyond what's already priced in, not just whether it beats a rolling average.
+
 = Data source & features
 
 // TODO
