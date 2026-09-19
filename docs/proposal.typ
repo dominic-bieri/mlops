@@ -17,57 +17,61 @@
 
 = Problem statement
 
-Predict the annualized realized volatility of the S&P 500 (^GSPC) for the next 5 trading days (one trading week), updated once per trading day after US market close.
-Realized volatility measures how much the price actually moved over a period, regardless of direction. Scope: S&P 500 index only, daily data from 1990 to today.
-This is useful for risk managers, who need to know how calm or choppy the market is likely to be, and for long-term (value) investors, who use volatility to judge when panic-driven sell-offs create buying opportunities.
+The goal is to predict how much the S&P 500 (^GSPC) will move over the next 5 trading days (one trading week). This is called realized volatility. The forecast is updated once per trading day, after the US market closes.
+Realized volatility shows how much the price moved over a period, no matter the direction. The project only looks at the S&P 500 index, using daily data from 1990 to today.
+This is useful for risk managers, who need to know if the market will be calm or shaky.
+It is also useful for long-term investors, who use volatility to decide when a sell-off is a good time to buy.
 
-Success criterion: the model's MAE should be at least 10% lower than a simple baseline, the realized volatility of the last 20 trading days (one trading month), tested on data from 2024 to today.
-Also compared against the VIX, an index reflecting the market's own volatility expectation.
+Success criterion: the model's MAE (mean absolute error) should be at least 10% lower than a simple baseline.
+The baseline is the realized volatility of the last 20 trading days (one trading month). The model will be tested on data from 2024 to today.
+It will also be compared to the VIX, an index that shows what the market itself expects future volatility to be.
 
 = Originality & motivation
 
-I have a personal interest in financial markets and investing, especially in looking at the overall market rather than individual stocks or crypto.
-That's what led me to this project.
-Most finance projects try to predict price direction, but that's close to a random walk and very hard for a model to get right, especially for a student project.
-Volatility behaves differently. Calm and turbulent periods tend to cluster, so it's a more realistic pattern to actually learn.
-That's why I focus on volatility instead of price direction, and it's still directly useful for risk management and for investors deciding when to buy during a sell-off.
+I am personally interested in financial markets and investing, especially in the overall market rather than single stocks or crypto.
+That interest is why I chose this project.
+Most finance projects try to predict the direction of prices, but that is close to a random walk and very hard for a model to get right, especially in a student project.
+Volatility behaves differently.
+Calm and turbulent periods tend to come in clusters, so there is a more realistic pattern for a model to learn.
+This is why I focus on volatility instead of price direction.
+It is still directly useful for risk management and for investors who want to know when to buy during a sell-off.
 
-It's also benchmarked directly against the VIX, the market's own volatility forecast.
-So the real question becomes whether the model adds anything beyond what's already priced in, not just whether it beats a rolling average.
+The model is also compared directly to the VIX, the market's own volatility forecast.
+So the real question is not just whether the model beats a simple rolling average, but whether it adds anything beyond what the market already expects.
 
 = Data source & features
 
-Both series will come from FRED, the data service of the St. Louis Fed. The S&P 500 (SP500) and the VIX (VIXCLS) will be pulled through its API once per trading day, the morning after the close, when both values are available.
-FRED only keeps ten years of S&P 500 history, so everything up to the end of 2016 will be loaded once from Yahoo Finance and stored as a fixed snapshot.
-This gives around 9000 daily rows going back to 1990, growing by roughly 252 rows a year.
+Both data series come from FRED, the data service of the St. Louis Fed. The S&P 500 (SP500) and the VIX (VIXCLS) will be pulled through its API once per trading day, in the morning after the close, once both values are available.
+FRED only keeps ten years of S&P 500 history, so all data up to the end of 2016 will be loaded once from Yahoo Finance and stored as a fixed snapshot.
+This gives around 9000 daily rows going back to 1990, growing by roughly 252 rows per year.
 
-The label will be the realized volatility of the next 5 trading days, computed from daily log returns.
-It only uses returns after the current day, which none of the features contain, so it cannot be derived from them.
-The features will be the realized volatility over the last 5, 10, 20 and 60 days, the daily log return and its absolute value, and the VIX level and its recent change.
-All rolling windows will only look backwards. Training will use data through 2023 and testing 2024 to today, in time order, with a gap of 5 trading days so the label windows do not overlap.
-As a regression task, there is no rare class to handle.
+The label is the realized volatility of the next 5 trading days, computed from daily log returns.
+It only uses returns that come after the current day. None of the features contain these returns, so the label cannot be derived from them.
+The features are the realized volatility over the last 5, 10, 20 and 60 days, the daily log return and its absolute value, and the VIX level and its recent change.
+All rolling windows only look backwards in time. The model will be trained on data through 2023 and tested on 2024 to today, in time order, with a 5 trading day gap so the label windows do not overlap.
+This is a regression task, so there is no rare class to handle.
 
 = System design
 
-The system will follow the feature, training and inference (FTI) split shown below.
+The system follows the feature, training and inference (FTI) split shown below.
 
 // TODO diagram
 
 == Core
 
-The feature pipeline will fetch the new S&P 500 and VIX values once per trading day, compute the features and store them.
-The training pipeline will read the features, train a LightGBM model and register the best version.
-The inference pipeline will load the latest model and show the 5 day forecast next to the baseline and the VIX.
+The feature pipeline fetches the new S&P 500 and VIX values once per trading day, computes the features and stores them.
+The training pipeline reads the features, trains a LightGBM model and registers the best version.
+The inference pipeline loads the latest model and shows the 5 day forecast next to the baseline and the VIX.
 
 == Tech stack
 
-/ BigQuery: stores the daily S&P 500 and VIX rows and the computed features, one growing table used by both the training and inference pipeline
-/ Google's Agent Platform (formerly Vertex AI): logs each training run with its parameters and metrics, holds the versioned models in its model registry
+/ BigQuery: stores the daily S&P 500 and VIX rows and the computed features in one growing table, used by both the training and inference pipeline
+/ Google's Agent Platform (formerly Vertex AI): logs each training run with its parameters and metrics, and holds the versioned models in its model registry
 / GitHub Actions: runs the daily feature pipeline job and the weekly training pipeline job on a schedule, plus manual triggers
-/ FastAPI on Cloud Run: serves the 5 day forecast next to the baseline and the VIX, small web page shows the current model version
+/ FastAPI on Cloud Run: serves the 5 day forecast next to the baseline and the VIX; a small web page shows the current model version
 
 All four services stay within their free monthly tier at this scale, or cost at most a few cents, well within the student GCP credits.
 
 == Optional
 
-A feature drift check and Terraform for the GCP resources will only be added if time allows.
+A feature drift check and Terraform for the GCP resources will only be added if there is time left.
