@@ -49,4 +49,25 @@ As a regression task, there is no rare class to handle.
 
 = System design
 
-// TODO
+The system will follow the feature, training and inference (FTI) split shown below.
+
+// TODO diagram
+
+== Core
+
+The feature pipeline will fetch the new S&P 500 and VIX values once per trading day, compute the features and store them.
+The training pipeline will read the features, train a LightGBM model and register the best version.
+The inference pipeline will load the latest model and show the 5 day forecast next to the baseline and the VIX.
+
+== Tech stack
+
+/ BigQuery: stores the daily S&P 500 and VIX rows and the computed features, one growing table used by both the training and inference pipeline
+/ Google's Agent Platform (formerly Vertex AI): logs each training run with its parameters and metrics, holds the versioned models in its model registry
+/ GitHub Actions: runs the daily feature pipeline job and the weekly training pipeline job on a schedule, plus manual triggers
+/ FastAPI on Cloud Run: serves the 5 day forecast next to the baseline and the VIX, small web page shows the current model version
+
+All four services stay within their free monthly tier at this scale, or cost at most a few cents, well within the student GCP credits.
+
+== Optional
+
+A feature drift check and Terraform for the GCP resources will only be added if time allows.
