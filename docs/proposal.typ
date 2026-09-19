@@ -37,7 +37,15 @@ So the real question becomes whether the model adds anything beyond what's alrea
 
 = Data source & features
 
-// TODO
+Both series will come from FRED, the data service of the St. Louis Fed. The S&P 500 (SP500) and the VIX (VIXCLS) will be pulled through its API once per trading day, the morning after the close, when both values are available.
+FRED only keeps ten years of S&P 500 history, so everything up to the end of 2016 will be loaded once from Yahoo Finance and stored as a fixed snapshot.
+This gives around 9000 daily rows going back to 1990, growing by roughly 252 rows a year.
+
+The label will be the realized volatility of the next 5 trading days, computed from daily log returns.
+It only uses returns after the current day, which none of the features contain, so it cannot be derived from them.
+The features will be the realized volatility over the last 5, 10, 20 and 60 days, the daily log return and its absolute value, and the VIX level and its recent change.
+All rolling windows will only look backwards. Training will use data through 2023 and testing 2024 to today, in time order, with a gap of 5 trading days so the label windows do not overlap.
+As a regression task, there is no rare class to handle.
 
 = System design
 
