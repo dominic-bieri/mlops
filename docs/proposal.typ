@@ -6,7 +6,7 @@
 #align(center)[
   #text(size: 18pt, weight: "bold")[Project Proposal - S&P 500 Realized Volatility Forecast]
   #v(0.3em)
-  #text(size: 12pt)[MLOPS - HS26]
+  #text(size: 12pt)[I.BA_MLOPS_MM.H26]
   #v(0.1em)
   #text(size: 10pt)[Dominic Bieri]
   #v(0.1em)
@@ -51,11 +51,15 @@ The features are the realized volatility over the last 5, 10, 20 and 60 days, th
 All rolling windows only look backwards in time. The model will be trained on data through 2023 and tested on 2024 to today, in time order, with a 5 trading day gap so the label windows do not overlap.
 This is a regression task, so there is no rare class to handle.
 
+#pagebreak(weak: true)
+
 = System design
 
 The system follows the feature, training and inference (FTI) split shown below.
 
-// TODO diagram
+#figure(
+  image("media/System_Design.svg", width: 100%),
+)
 
 == Core
 
