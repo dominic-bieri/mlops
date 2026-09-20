@@ -70,7 +70,7 @@ The inference pipeline loads the latest model and shows the 5 day forecast next 
 == Tech stack
 
 / BigQuery: stores the daily S&P 500 and VIX rows and the computed features in one growing table, used by both the training and inference pipeline
-/ Google's Agent Platform (formerly Vertex AI): logs each training run with its parameters and metrics, and holds the versioned models in its model registry
+/ Agent Platform (formerly Vertex AI): logs each training run with its parameters and metrics, and holds the versioned models in its model registry
 / GitHub Actions: runs the daily feature pipeline job and the weekly training pipeline job on a schedule, plus manual triggers
 / FastAPI on Cloud Run: serves the 5 day forecast next to the baseline and the VIX; a small web page shows the current model version
 
