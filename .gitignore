@@ -1,2 +1,8 @@
 # Jetbrains IDEs
 .idea
+
+# macOS
+.DS_Store
+
+# draw.io desktop backup files
+.$*.bkp
