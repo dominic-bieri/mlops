@@ -1,6 +1,6 @@
-<mxfile host="app.diagrams.net">
+<mxfile host="Electron">
   <diagram name="Seite-1" id="LZv-yUW2G6XDG10E1UgH">
-    <mxGraphModel dx="1065" dy="564" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="330" dy="286" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -106,7 +106,7 @@
         <mxCell id="QDgcui3E7Z8_5--_NuvL-22" parent="QDgcui3E7Z8_5--_NuvL-39" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="" vertex="1">
           <mxGeometry height="115" width="359.77" as="geometry" />
         </mxCell>
-        <mxCell id="QDgcui3E7Z8_5--_NuvL-26" parent="QDgcui3E7Z8_5--_NuvL-39" style="sketch=0;html=1;verticalAlign=top;labelPosition=center;verticalLabelPosition=bottom;align=center;fontSize=11;fontStyle=0;fontColor=#000000;aspect=fixed;pointerEvents=1;shape=mxgraph.gcp3.vertexai;fillColor=#4285f4" value="Gemini&lt;div&gt;Agent Platform&lt;/div&gt;" vertex="1">
+        <mxCell id="QDgcui3E7Z8_5--_NuvL-26" parent="QDgcui3E7Z8_5--_NuvL-39" style="sketch=0;html=1;verticalAlign=top;labelPosition=center;verticalLabelPosition=bottom;align=center;fontSize=11;fontStyle=0;fontColor=#000000;aspect=fixed;pointerEvents=1;shape=mxgraph.gcp3.vertexai;fillColor=#4285f4" value="&lt;div&gt;Agent Platform&lt;/div&gt;" vertex="1">
           <mxGeometry height="25.100232558139535" width="25.376335116279066" x="27.511823529411764" y="10" as="geometry" />
         </mxCell>
         <mxCell id="QDgcui3E7Z8_5--_NuvL-27" parent="QDgcui3E7Z8_5--_NuvL-39" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=15;" value="Model Registry" vertex="1">
