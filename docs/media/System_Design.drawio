@@ -13,10 +13,16 @@
         <mxCell id="QDgcui3E7Z8_5--_NuvL-4" edge="1" parent="1" source="QDgcui3E7Z8_5--_NuvL-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="QDgcui3E7Z8_5--_NuvL-3">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="QDgcui3E7Z8_5--_NuvL-1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="FRED Api&lt;div&gt;(daily)&lt;/div&gt;" vertex="1">
+        <mxCell id="QDgcui3E7Z8_5--_NuvL-1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="FRED Api&lt;div&gt;(VIX, daily)&lt;/div&gt;" vertex="1">
           <mxGeometry height="60" width="120" x="70" y="90" as="geometry" />
         </mxCell>
         <mxCell id="QDgcui3E7Z8_5--_NuvL-5" edge="1" parent="1" source="QDgcui3E7Z8_5--_NuvL-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="QDgcui3E7Z8_5--_NuvL-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="QDgcui3E7Z8_5--_NuvL-100" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;dashed=1;" value="Yahoo Finance&lt;div&gt;(backup)&lt;/div&gt;" vertex="1">
+          <mxGeometry height="60" width="120" x="70" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="QDgcui3E7Z8_5--_NuvL-101" edge="1" parent="1" source="QDgcui3E7Z8_5--_NuvL-100" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;dashed=1;" target="QDgcui3E7Z8_5--_NuvL-3">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="QDgcui3E7Z8_5--_NuvL-57" connectable="0" parent="QDgcui3E7Z8_5--_NuvL-5" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="Raw Data" vertex="1">
@@ -24,7 +30,7 @@
             <mxPoint x="5" as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="QDgcui3E7Z8_5--_NuvL-2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="&lt;font&gt;Yahoo Finance&lt;/font&gt;&lt;div&gt;&lt;span style=&quot;text-align: start; white-space: pre;&quot;&gt;&lt;font&gt;(1990–2016 history)&lt;/font&gt;&lt;/span&gt;&lt;br&gt;&lt;/div&gt;" vertex="1">
+        <mxCell id="QDgcui3E7Z8_5--_NuvL-2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="Tiingo Api&lt;div&gt;(SPY, daily + history since 1993)&lt;/div&gt;" vertex="1">
           <mxGeometry height="60" width="120" x="70" y="170" as="geometry" />
         </mxCell>
         <mxCell id="QDgcui3E7Z8_5--_NuvL-3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="Feature Pipeline" vertex="1">
