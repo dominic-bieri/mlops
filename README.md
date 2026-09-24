@@ -7,3 +7,7 @@ The goal is to predict how much the S&P 500 will move over the next 5 trading da
 ## Requirements
 
 This repository uses [Git LFS](https://git-lfs.com) to track PDFs and pictures.
+
+## Setup
+
+This project uses [uv](https://docs.astral.sh/uv/) for dependency management.
