@@ -6,3 +6,22 @@
 
 # draw.io desktop backup files
 .$*.bkp
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# secrets
+.env
+
+# data & model artifacts
+data/
+mlruns/
+*.pkl
+*.joblib
+*.pt
+*.onnx
