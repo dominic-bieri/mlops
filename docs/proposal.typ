@@ -50,6 +50,7 @@ It only uses returns that come after the current day. None of the features conta
 The features are the realized volatility over the last 5, 10, 20 and 60 days, the daily log return and its absolute value, and the VIX level and its recent change.
 All rolling windows only look backwards in time. The model will be trained on data through 2023 and tested on 2024 to today, in time order, with a 5 trading day gap so the label windows do not overlap.
 This is a regression task, so there is no rare class to handle.
+All features are pre-calculated once per trading day. This makes them batch features.
 
 #pagebreak(weak: true)
 
@@ -66,6 +67,9 @@ The system follows the feature, training and inference (FTI) split shown below.
 The feature pipeline fetches the new S&P 500 and VIX values once per trading day, computes the features and stores them.
 The training pipeline reads the features, trains a LightGBM model and registers the best version.
 The inference pipeline loads the latest model and shows the 5 day forecast next to the baseline and the VIX.
+
+The feature and training pipelines use batch processing. Serving is request-response. Together this makes online prediction with batch features.
+The weekly training run is automated stateless retraining. The label is a natural label, since it becomes available on its own once the next 5 trading days have passed.
 
 == Tech stack
 
