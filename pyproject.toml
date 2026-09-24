@@ -5,15 +5,15 @@ description = "S&P 500 realized volatility forecast — MLOps HS26"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "requests>=2.34",
-    "pandas>=3.0",
-    "python-dotenv>=1.0",
+    "requests==2.34.2",
+    "pandas==3.0.6",
+    "python-dotenv==1.2.3",
 ]
 
 [dependency-groups]
 dev = [
-    "ruff>=0.16",
-    "pytest>=8.0",
+    "ruff==0.16.8",
+    "pytest==9.1.1",
 ]
 
 [build-system]
