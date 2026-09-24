@@ -17,8 +17,8 @@
 
 = Problem statement
 
-The goal is to predict how much the S&P 500 (^GSPC) will move over the next 5 trading days (one trading week). This is called realized volatility. The forecast is updated once per trading day, after the US market closes.
-Realized volatility shows how much the price moved over a period, no matter the direction. The project only looks at the S&P 500 index, using daily data from 1990 to today.
+The goal is to predict how much the S&P 500, tracked through the SPY ETF, will move over the next 5 trading days (one trading week). This is called realized volatility. The forecast is updated once per trading day, after the US market closes.
+Realized volatility shows how much the price moved over a period, no matter the direction. The project only looks at the S&P 500, using daily data from 1993 to today.
 This is useful for risk managers, who need to know if the market will be calm or shaky.
 It is also useful for long-term investors, who use volatility to decide when a sell-off is a good time to buy.
 
@@ -41,9 +41,10 @@ So the real question is not just whether the model beats a simple rolling averag
 
 = Data source & features
 
-Both data series come from FRED, the data service of the St. Louis Fed. The S&P 500 (SP500) and the VIX (VIXCLS) will be pulled through its API once per trading day, in the morning after the close, once both values are available.
-FRED only keeps ten years of S&P 500 history, so all data up to the end of 2016 will be loaded once from Yahoo Finance and stored as a fixed snapshot.
-This gives around 9000 daily rows going back to 1990, growing by roughly 252 rows per year.
+The VIX (VIXCLS) comes from FRED, the data service of the St. Louis Fed, pulled through its API once per trading day, in the morning after the close, once available.
+Instead of the raw S&P 500 index, the project tracks the SPY ETF, since the index itself is a licensed product of S&P Dow Jones Indices with reproduction restrictions, while ETF share price data carries no such restriction. SPY prices come from Tiingo, a free end-of-day stock data API, pulled once per trading day for that day's value only, handled through the API's date query parameter rather than filtered in code. Yahoo Finance is kept as a backup data source in case Tiingo or FRED becomes unavailable.
+SPY has traded since 1993, so the historical backfill (loaded once from Tiingo and stored as a fixed snapshot) starts there instead of 1990.
+This gives around 8500 daily rows going back to 1993, growing by roughly 252 rows per year.
 
 The label is the realized volatility of the next 5 trading days, computed from daily log returns.
 It only uses returns that come after the current day. None of the features contain these returns, so the label cannot be derived from them.
