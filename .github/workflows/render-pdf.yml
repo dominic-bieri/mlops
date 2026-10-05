@@ -2,12 +2,13 @@ name: Render Typst PDF
 
 on:
   push:
+    branches: [main]
     paths:
       - "docs/**"
-      - ".github/workflows/render-pdf.yml"
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   render:
@@ -25,10 +26,22 @@ jobs:
             typst compile "$file" "${file%.typ}.pdf"
           done
 
-      - name: Commit rendered PDFs
+      - name: Open PR with rendered PDFs
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/*.pdf
-          git diff --staged --quiet || git commit -m ":robot: render PDFs from Typst sources"
-          git push
+          git diff --staged --quiet && exit 0
+
+          branch="render-pdf/auto-${{ github.run_id }}"
+          git checkout -b "$branch"
+          git commit -m ":robot: render PDFs from Typst sources"
+          git push -u origin "$branch"
+
+          gh pr create \
+            --title ":robot: render PDFs from Typst sources" \
+            --body "Automated PDF render triggered by changes under \`docs/\`." \
+            --base "${{ github.ref_name }}" \
+            --head "$branch"
