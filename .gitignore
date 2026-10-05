@@ -25,3 +25,10 @@ mlruns/
 *.joblib
 *.pt
 *.onnx
+
+# terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.*
+terraform/terraform.tfvars
+terraform/*.tfplan
