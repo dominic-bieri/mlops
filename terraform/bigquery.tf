@@ -18,13 +18,13 @@ resource "google_bigquery_table" "vix" {
       name        = "date"
       type        = "DATE"
       mode        = "REQUIRED"
-      description = "Observation date."
+      description = "Trading day."
     },
     {
-      name        = "value"
+      name        = "close"
       type        = "FLOAT64"
-      mode        = "NULLABLE"
-      description = "VIX close. NULL when FRED reports no value (\".\")."
+      mode        = "REQUIRED"
+      description = "VIX closing level."
     },
   ])
 }
@@ -45,13 +45,13 @@ resource "google_bigquery_table" "sp500" {
     {
       name        = "close"
       type        = "FLOAT64"
-      mode        = "NULLABLE"
+      mode        = "REQUIRED"
       description = "Raw closing price."
     },
     {
       name        = "div_cash"
       type        = "FLOAT64"
-      mode        = "NULLABLE"
+      mode        = "REQUIRED"
       description = "Cash dividend paid on this day."
     },
   ])
