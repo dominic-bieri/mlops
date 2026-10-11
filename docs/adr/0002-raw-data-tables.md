@@ -9,7 +9,7 @@ The proposal planned one table for all data and features.
 ## Decision
 
 - Raw data goes into two tables, `vix` and `sp500`, one row per day (`date`)
-- The features will get their own table later
+- Features get their own table ([ADR 5](0005-feature-table.md))
 
 ## Consequences
 

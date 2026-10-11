@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 TRADING_DAYS_PER_YEAR = 252
 RV_WINDOWS = [5, 10, 20, 60]
 HORIZON = 5
+VIX_CHANGE_DAYS = 5
 
 FEATURE_COLUMNS = [
     "log_return",
@@ -50,7 +51,7 @@ def build_spy_features(sp500: pd.DataFrame) -> pd.DataFrame:
 def build_vix_features(vix: pd.DataFrame) -> pd.DataFrame:
     df = vix.sort_values("date").reset_index(drop=True)
     df = df.rename(columns={"close": "vix"})
-    df["vix_change_5d"] = df["vix"] - df["vix"].shift(5)
+    df["vix_change_5d"] = df["vix"] - df["vix"].shift(VIX_CHANGE_DAYS)
     return df
 
 

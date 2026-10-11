@@ -1,8 +1,8 @@
 # Google Cloud setup
 
-One-time setup by hand. Everything else is in [Terraform](terraform/README.md).
+One-time setup by hand. Everything else is in [Terraform](../terraform/README.md).
 
-GitHub Actions log in via Workload Identity Federation, no key ([ADR 4](docs/adr/0004-github-actions-gcp-auth.md)).
+GitHub Actions log in via Workload Identity Federation, no key ([ADR 4](adr/0004-github-actions-gcp-auth.md)).
 One GitHub environment per workflow, each with only its own roles.
 
 ## State bucket
