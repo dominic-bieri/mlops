@@ -17,7 +17,7 @@ jobs:
     concurrency:
       group: feature-pipeline
       cancel-in-progress: false
-    # Google roles are bound to this environment, see google-cloud.md
+    # Google roles are bound to this environment, see docs/google-cloud.md
     environment: feature-pipeline
     permissions:
       contents: read

@@ -16,7 +16,7 @@ The repository is public.
 ## Consequences
 
 - No secret to rotate or leak
-- One-time manual setup (see `google-cloud.md`)
+- One-time manual setup (see [`google-cloud.md`](../google-cloud.md))
 - Whoever can push to `main` can change the project, so `main` needs branch protection
 - Each workflow gets its own environment and roles
 - New service in Terraform needs a new role
