@@ -26,6 +26,7 @@ cp .env.example .env   # fill in your values, see Configuration
 
 ```bash
 uv run python -m sp500_vol.features.ingest   # load VIX and SPY into BigQuery
+uv run python -m sp500_vol.features.build    # rebuild the features table
 uv run pytest                                # run tests
 ```
 
