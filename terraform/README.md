@@ -4,11 +4,11 @@ Google Cloud resources for the project.
 
 ## Files
 
-- `versions.tf` — provider and backend setup
-- `variables.tf` — inputs (`project_id`, `region`, `dataset_id`)
-- `apis.tf` — list of Google Cloud APIs to turn on
-- `bigquery.tf` — BigQuery dataset and tables
-- `outputs.tf` — outputs
+- `versions.tf`: provider and backend setup
+- `variables.tf`: inputs (`project_id`, `region`, `dataset_id`)
+- `apis.tf`: list of Google Cloud APIs to turn on
+- `bigquery.tf`: BigQuery dataset and tables
+- `outputs.tf`: outputs
 
 One file per service. New service: new file + its API in `apis.tf`.
 
