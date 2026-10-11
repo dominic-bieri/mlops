@@ -3,7 +3,7 @@
 Google Cloud resources: APIs (`apis.tf`) and BigQuery (`bigquery.tf`).
 New service: new file, add its API to `apis.tf`.
 
-One-time setup first: [`google-cloud.md`](../google-cloud.md).
+One-time setup first: [`docs/google-cloud.md`](../docs/google-cloud.md).
 
 ## Run
 

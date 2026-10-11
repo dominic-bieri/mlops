@@ -17,7 +17,7 @@ cp .env.example .env   # fill in your values
 gcloud auth application-default login
 ```
 
-Google Cloud: [`google-cloud.md`](google-cloud.md), then [`terraform/README.md`](terraform/README.md).
+Google Cloud: [`docs/google-cloud.md`](docs/google-cloud.md), then [`terraform/README.md`](terraform/README.md).
 
 ## Usage
 
