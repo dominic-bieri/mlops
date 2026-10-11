@@ -7,10 +7,10 @@ from sp500_vol.features.tiingo_client import TiingoClient
 
 logger = logging.getLogger(__name__)
 
-# first SPY trading day, used when a table is still empty
+# first SPY trading day
 BACKFILL_START = date(1993, 1, 29)
 
-# reload a few days before the latest stored date, so values FRED publishes late are picked up
+# catches late FRED values
 OVERLAP_DAYS = 7
 
 
@@ -26,20 +26,16 @@ def main() -> None:
     bq = BigQueryClient()
     end = date.today()
 
-    latest_dates = bq.get_latest_dates(["vix", "sp500"])
-    vix_start = get_start(latest_dates["vix"])
-    sp500_start = get_start(latest_dates["sp500"])
+    vix_start = get_start(bq.get_latest_date("vix"))
+    sp500_start = get_start(bq.get_latest_date("sp500"))
 
-    # fetch both first, so a failed fetch from one source writes nothing.
-    # if the second upsert fails, vix is ahead of sp500 until the next run;
-    # this fixes itself because each table gets its own start date
     vix = fred.fetch_vix(vix_start, end)
     sp500 = tiingo.fetch_spy(sp500_start, end)
 
-    bq.upsert(vix, "vix")
+    bq.replace_from(vix, "vix", vix_start)
     logger.info("vix: %d rows since %s", len(vix), vix_start)
 
-    bq.upsert(sp500, "sp500")
+    bq.replace_from(sp500, "sp500", sp500_start)
     logger.info("sp500: %d rows since %s", len(sp500), sp500_start)
 
 
