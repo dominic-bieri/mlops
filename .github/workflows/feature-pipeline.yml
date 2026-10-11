@@ -1,0 +1,49 @@
+name: Feature pipeline
+
+on:
+  # morning after each US trading day, FRED has the VIX by then
+  schedule:
+    - cron: "0 13 * * 2-6"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # one run at a time, both write to BigQuery
+    concurrency:
+      group: feature-pipeline
+      cancel-in-progress: false
+    # Google roles are bound to this environment, see google-cloud.md
+    environment: feature-pipeline
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+      TIINGO_API_KEY: ${{ secrets.TIINGO_API_KEY }}
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      BQ_DATASET: sp500_vol
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      # before auth, so the credentials file doesn't exist yet
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+
+      - name: Install dependencies
+        run: uv sync --locked --no-dev
+
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+
+      - name: Ingest VIX and SPY
+        run: uv run --no-sync python -m sp500_vol.features.ingest
+
+      - name: Build features
+        run: uv run --no-sync python -m sp500_vol.features.build
