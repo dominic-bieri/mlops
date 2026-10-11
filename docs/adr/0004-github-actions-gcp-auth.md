@@ -16,8 +16,8 @@ The repository is public.
 ## Consequences
 
 - No secret to rotate or leak
-- One-time manual setup (see `terraform/README.md`)
+- One-time manual setup (see `google-cloud.md`)
 - Whoever can push to `main` can change the project, so `main` needs branch protection
-- Pipeline workflows later get their own environment and roles
+- Each workflow gets its own environment and roles
 - New service in Terraform needs a new role
 - Cloud Run doesn't support direct access, it will need a service account
