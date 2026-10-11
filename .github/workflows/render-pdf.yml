@@ -3,8 +3,10 @@ name: Render Typst PDF
 on:
   push:
     branches: [main]
+    # sources only, not the rendered PDF, else merging the bot PR renders again
     paths:
-      - "docs/**"
+      - "docs/**/*.typ"
+      - "docs/media/**"
 
 jobs:
   render:
@@ -22,6 +24,8 @@ jobs:
 
       - name: Compile *.typ files
         run: |
+          # fixed PDF date, so the same source gives the same PDF
+          export SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)
           find docs -type f -name '*.typ' -print0 | while IFS= read -r -d '' file; do
             typst compile "$file" "${file%.typ}.pdf"
           done
