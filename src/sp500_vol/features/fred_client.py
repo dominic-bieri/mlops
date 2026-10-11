@@ -21,7 +21,7 @@ class FredClient:
             "observation_end": end.isoformat(),
         }
 
-        # own errors: API key is in the URL, keep it out of logs
+        # own errors, URL contains API key
         try:
             response = requests.get(self.BASE_URL, params=params, timeout=30)
         except requests.RequestException as e:

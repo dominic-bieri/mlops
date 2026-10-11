@@ -19,7 +19,7 @@ class TiingoClient:
             "startDate": start.isoformat(),
             "endDate": end.isoformat(),
         }
-        # token in header, keeps it out of logs
+        # header keeps token out of logs
         headers = {"Authorization": f"Token {self.api_key}"}
 
         response = requests.get(url, params=params, headers=headers, timeout=30)
@@ -34,9 +34,4 @@ def to_spy_frame(prices: list[dict[str, Any]]) -> pd.DataFrame:
     df = df.rename(columns={"divCash": "div_cash"})
 
     df["date"] = pd.to_datetime(df["date"]).dt.date
-    df["close"] = pd.to_numeric(df["close"], errors="coerce")
-    df["div_cash"] = pd.to_numeric(df["div_cash"], errors="coerce")
-    df["div_cash"] = df["div_cash"].fillna(0.0)
-
-    df = df.dropna(subset=["close"])
     return df
