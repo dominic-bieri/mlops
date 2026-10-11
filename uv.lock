@@ -2,9 +2,12 @@ version = 1
 revision = 5
 requires-python = ">=3.14"
 resolution-markers = [
-    "sys_platform == 'win32'",
-    "sys_platform == 'emscripten'",
-    "sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version >= '3.15' and sys_platform == 'win32'",
+    "python_full_version >= '3.15' and sys_platform == 'emscripten'",
+    "python_full_version >= '3.15' and sys_platform != 'emscripten' and sys_platform != 'win32'",
+    "python_full_version < '3.15' and sys_platform == 'win32'",
+    "python_full_version < '3.15' and sys_platform == 'emscripten'",
+    "python_full_version < '3.15' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
 
 [[package]]
@@ -865,6 +868,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "google-cloud-bigquery", extra = ["pandas"] },
+    { name = "numpy" },
     { name = "pandas" },
     { name = "python-dotenv" },
     { name = "requests" },
@@ -879,6 +883,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "google-cloud-bigquery", extras = ["pandas"], specifier = "==3.46.1" },
+    { name = "numpy", specifier = "==2.5.3" },
     { name = "pandas", specifier = "==3.0.6" },
     { name = "python-dotenv", specifier = "==1.2.4" },
     { name = "requests", specifier = "==2.34.2" },
