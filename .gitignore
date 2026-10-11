@@ -32,3 +32,6 @@ terraform/*.tfstate
 terraform/*.tfstate.*
 terraform/terraform.tfvars
 terraform/*.tfplan
+terraform/tfplan
+# google-github-actions/auth credentials
+gha-creds-*.json

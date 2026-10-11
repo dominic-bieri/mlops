@@ -6,17 +6,17 @@ on:
     paths:
       - "docs/**"
 
-permissions:
-  contents: write
-  pull-requests: write
-
 jobs:
   render:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           lfs: true
+          persist-credentials: false
 
       - uses: typst-community/setup-typst@fee4b65b091cc546f02ce3be15fad8760f38a108 # v5
 
@@ -32,6 +32,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          # token only in this step, not in .git/config
+          gh auth setup-git
           git add docs/*.pdf
           git diff --staged --quiet && exit 0
 
