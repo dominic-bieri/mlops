@@ -15,6 +15,7 @@
   "packageRules": [
     {
       "matchManagers": ["pep621", "pip_requirements"],
+      "matchDepTypes": ["!requires-python"],
       "rangeStrategy": "pin"
     },
     {
