@@ -22,6 +22,12 @@ class BigQueryClient:
         rows = list(self.client.query(sql).result())
         return rows[0]["latest"]
 
+    def read_table(self, table: str) -> pd.DataFrame:
+        table_id = self.get_table_id(table)
+        sql = f"SELECT * FROM `{table_id}`"
+
+        return self.client.query(sql).to_dataframe()
+
     def replace_from(self, df: pd.DataFrame, table: str, start: date) -> None:
         # empty fetch would only delete
         if df.empty:
@@ -33,4 +39,15 @@ class BigQueryClient:
         self.client.query(delete_sql).result()
 
         job_config = bigquery.LoadJobConfig(write_disposition="WRITE_APPEND")
+        self.client.load_table_from_dataframe(df, table_id, job_config=job_config).result()
+
+    def replace_all(self, df: pd.DataFrame, table: str) -> None:
+        # empty result would wipe the table
+        if df.empty:
+            return
+
+        table_id = self.get_table_id(table)
+
+        # keeps schema from Terraform
+        job_config = bigquery.LoadJobConfig(write_disposition="WRITE_TRUNCATE_DATA")
         self.client.load_table_from_dataframe(df, table_id, job_config=job_config).result()
