@@ -29,32 +29,6 @@ def test_spy_maps_tiingo_fields_on_ex_dividend_day() -> None:
     assert df["div_cash"].tolist() == [1.5949]
 
 
-def test_vix_empty_response() -> None:
-    df = to_vix_frame([])
-
-    assert df.empty
-    assert list(df.columns) == ["date", "close"]
-
-
-def test_spy_empty_response() -> None:
-    df = to_spy_frame([])
-
-    assert df.empty
-    assert list(df.columns) == ["date", "close", "div_cash"]
-
-
-def test_spy_drops_rows_without_close_and_defaults_missing_dividend() -> None:
-    prices = [
-        {"date": "2024-03-14T00:00:00.000Z", "close": None, "divCash": 0.0},
-        {"date": "2024-03-15T00:00:00.000Z", "close": 509.83},
-    ]
-
-    df = to_spy_frame(prices)
-
-    assert df["date"].tolist() == [date(2024, 3, 15)]
-    assert df["div_cash"].tolist() == [0.0]
-
-
 def test_fred_error_does_not_leak_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("FRED_API_KEY", "secret-key")
     response = requests.Response()

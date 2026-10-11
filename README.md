@@ -5,7 +5,7 @@ A project for MLOps HS26.
 The goal is to predict how much the S&P 500 will move over the next 5 trading days (realized volatility), updated once per trading day after US market close.
 
 - Proposal: [`docs/proposal.pdf`](docs/proposal.pdf)
-- Decisions after the proposal: [`docs/decisions.md`](docs/decisions.md)
+- Architecture Decision Records (ADRs): [`docs/adr/`](docs/adr/)
 
 ## Requirements
 
@@ -17,7 +17,17 @@ This repository uses [Git LFS](https://git-lfs.com) to track PDFs and pictures.
 
 ## Setup
 
-This project uses [uv](https://docs.astral.sh/uv/) for dependency management.
+```bash
+uv sync
+cp .env.example .env   # fill in your values, see Configuration
+```
+
+## Usage
+
+```bash
+uv run python -m sp500_vol.features.ingest   # load VIX and SPY into BigQuery
+uv run pytest                                # run tests
+```
 
 ## Configuration
 
