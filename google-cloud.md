@@ -51,6 +51,8 @@ PRINCIPAL="principalSet://iam.googleapis.com/projects/$PROJECT_NUMBER/locations/
 
 ## Environment `terraform`
 
+Needs `PROJECT_ID` and `PRINCIPAL` from above.
+
 ```bash
 for ROLE in roles/serviceusage.serviceUsageAdmin roles/bigquery.admin; do
   gcloud projects add-iam-policy-binding $PROJECT_ID \
@@ -68,6 +70,8 @@ gcloud storage buckets add-iam-policy-binding gs://$PROJECT_ID-tfstate \
 | `GCP_TFSTATE_BUCKET` | variable | `YOUR_PROJECT_ID-tfstate` |
 
 ## Environment `feature-pipeline`
+
+Needs `PROJECT_ID` and `PRINCIPAL` from above.
 
 ```bash
 for ROLE in roles/bigquery.jobUser roles/bigquery.dataEditor; do
