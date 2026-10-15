@@ -49,6 +49,24 @@ resource "google_bigquery_table" "sp500" {
       description = "Trading day."
     },
     {
+      name        = "open"
+      type        = "FLOAT64"
+      mode        = "REQUIRED"
+      description = "Raw opening price."
+    },
+    {
+      name        = "high"
+      type        = "FLOAT64"
+      mode        = "REQUIRED"
+      description = "Raw daily high."
+    },
+    {
+      name        = "low"
+      type        = "FLOAT64"
+      mode        = "REQUIRED"
+      description = "Raw daily low."
+    },
+    {
       name        = "close"
       type        = "FLOAT64"
       mode        = "REQUIRED"

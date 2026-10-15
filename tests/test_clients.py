@@ -20,11 +20,23 @@ def test_vix_skips_market_holidays() -> None:
 
 
 def test_spy_maps_tiingo_fields_on_ex_dividend_day() -> None:
-    prices = [{"date": "2024-03-15T00:00:00.000Z", "close": 509.83, "divCash": 1.5949}]
+    prices = [
+        {
+            "date": "2024-03-15T00:00:00.000Z",
+            "open": 510.21,
+            "high": 511.70,
+            "low": 508.12,
+            "close": 509.83,
+            "divCash": 1.5949,
+        }
+    ]
 
     df = to_spy_frame(prices)
 
     assert df["date"].tolist() == [date(2024, 3, 15)]
+    assert df["open"].tolist() == [510.21]
+    assert df["high"].tolist() == [511.70]
+    assert df["low"].tolist() == [508.12]
     assert df["close"].tolist() == [509.83]
     assert df["div_cash"].tolist() == [1.5949]
 
