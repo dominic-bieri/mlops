@@ -110,6 +110,12 @@ resource "google_bigquery_table" "features" {
       description = "Absolute daily log return."
     },
     {
+      name        = "rv_1d"
+      type        = "FLOAT64"
+      mode        = "REQUIRED"
+      description = "Volatility of the last day, for HAR-RV."
+    },
+    {
       name        = "rv_5d"
       type        = "FLOAT64"
       mode        = "REQUIRED"
@@ -126,6 +132,12 @@ resource "google_bigquery_table" "features" {
       type        = "FLOAT64"
       mode        = "REQUIRED"
       description = "Volatility of the last 20 days, baseline."
+    },
+    {
+      name        = "rv_22d"
+      type        = "FLOAT64"
+      mode        = "REQUIRED"
+      description = "Volatility of the last 22 days, for HAR-RV."
     },
     {
       name        = "rv_60d"

@@ -8,16 +8,18 @@ from sp500_vol.common.bigquery import BigQueryClient
 logger = logging.getLogger(__name__)
 
 TRADING_DAYS_PER_YEAR = 252
-RV_WINDOWS = [5, 10, 20, 60]
+RV_WINDOWS = [1, 5, 10, 20, 22, 60]
 HORIZON = 5
 VIX_CHANGE_DAYS = 5
 
 FEATURE_COLUMNS = [
     "log_return",
     "abs_log_return",
+    "rv_1d",
     "rv_5d",
     "rv_10d",
     "rv_20d",
+    "rv_22d",
     "rv_60d",
     "vix",
     "vix_change_5d",
