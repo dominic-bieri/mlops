@@ -15,12 +15,12 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@v7.0.1
         with:
           lfs: true
           persist-credentials: false
 
-      - uses: typst-community/setup-typst@fee4b65b091cc546f02ce3be15fad8760f38a108 # v5
+      - uses: typst-community/setup-typst@v5.3.0
 
       - name: Compile *.typ files
         run: |
