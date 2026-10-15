@@ -13,7 +13,6 @@ resource "google_bigquery_table" "vix" {
   table_id    = "vix"
   description = "Daily VIX close from FRED (series VIXCLS)."
 
-  # data can be reloaded, see ADR 1
   deletion_protection = false
 
   schema = jsonencode([
@@ -29,6 +28,12 @@ resource "google_bigquery_table" "vix" {
       mode        = "REQUIRED"
       description = "VIX closing level."
     },
+    {
+      name        = "loaded_at"
+      type        = "TIMESTAMP"
+      mode        = "REQUIRED"
+      description = "When the row was first loaded (UTC)."
+    },
   ])
 }
 
@@ -38,7 +43,6 @@ resource "google_bigquery_table" "sp500" {
   table_id    = "sp500"
   description = "Daily SPY end-of-day prices from Tiingo, used as S&P 500 proxy."
 
-  # data can be reloaded, see ADR 1
   deletion_protection = false
 
   schema = jsonencode([
@@ -47,6 +51,24 @@ resource "google_bigquery_table" "sp500" {
       type        = "DATE"
       mode        = "REQUIRED"
       description = "Trading day."
+    },
+    {
+      name        = "open"
+      type        = "FLOAT64"
+      mode        = "REQUIRED"
+      description = "Raw opening price."
+    },
+    {
+      name        = "high"
+      type        = "FLOAT64"
+      mode        = "REQUIRED"
+      description = "Raw daily high."
+    },
+    {
+      name        = "low"
+      type        = "FLOAT64"
+      mode        = "REQUIRED"
+      description = "Raw daily low."
     },
     {
       name        = "close"
@@ -60,6 +82,12 @@ resource "google_bigquery_table" "sp500" {
       mode        = "REQUIRED"
       description = "Cash dividend paid on this day."
     },
+    {
+      name        = "loaded_at"
+      type        = "TIMESTAMP"
+      mode        = "REQUIRED"
+      description = "When the row was first loaded (UTC)."
+    },
   ])
 }
 
@@ -69,7 +97,6 @@ resource "google_bigquery_table" "features" {
   table_id    = "features"
   description = "Daily features and label."
 
-  # rebuilt on each run, see ADR 5
   deletion_protection = false
 
   schema = jsonencode([
@@ -92,6 +119,12 @@ resource "google_bigquery_table" "features" {
       description = "Absolute daily log return."
     },
     {
+      name        = "rv_1d"
+      type        = "FLOAT64"
+      mode        = "REQUIRED"
+      description = "Volatility of the last day, for HAR-RV."
+    },
+    {
       name        = "rv_5d"
       type        = "FLOAT64"
       mode        = "REQUIRED"
@@ -108,6 +141,12 @@ resource "google_bigquery_table" "features" {
       type        = "FLOAT64"
       mode        = "REQUIRED"
       description = "Volatility of the last 20 days, baseline."
+    },
+    {
+      name        = "rv_22d"
+      type        = "FLOAT64"
+      mode        = "REQUIRED"
+      description = "Volatility of the last 22 days, for HAR-RV."
     },
     {
       name        = "rv_60d"
