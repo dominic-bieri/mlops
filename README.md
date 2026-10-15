@@ -4,11 +4,23 @@ MLOps HS26. Predicts how much the S&P 500 will move over the next 5 trading days
 The forecast is the volatility of SPY as a proxy for the S&P 500. It is not a trading signal.
 
 - [Proposal](docs/proposal.pdf)
+- [MS2 summary](docs/ms2_summary.pdf)
 - [ADRs](docs/adr/)
+
+## Changes since the proposal
+
+- Volatility uses open, high, low and close instead of only the close, so the label is less noisy ([ADR 6](docs/adr/0006-volatility-definition.md))
+- HAR-RV as a second baseline, VIX corrected by one factor ([ADR 7](docs/adr/0007-baselines.md))
+- Retraining monthly instead of weekly ([ADR 9](docs/adr/0009-training-and-retraining.md))
+- Success criterion: lower MAE than HAR-RV and the scaled VIX, instead of 10 % better than the 20-day volatility
+- Terraform for all BigQuery tables, applied by GitHub Actions when a merge to `main` changes `terraform/`
 
 ## Requirements
 
-[Git LFS](https://git-lfs.com), [uv](https://docs.astral.sh/uv/), [gcloud CLI](https://cloud.google.com/sdk/docs/install), [Terraform](https://developer.hashicorp.com/terraform/install)
+- [Git LFS](https://git-lfs.com)
+- [uv](https://docs.astral.sh/uv/)
+- [gcloud CLI](https://cloud.google.com/sdk/docs/install)
+- [Terraform](https://developer.hashicorp.com/terraform/install)
 
 ## Setup
 
