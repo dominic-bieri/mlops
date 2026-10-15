@@ -13,6 +13,9 @@ resource "google_bigquery_table" "vix" {
   table_id    = "vix"
   description = "Daily VIX close from FRED (series VIXCLS)."
 
+  # data can be reloaded, see ADR 1
+  deletion_protection = false
+
   schema = jsonencode([
     {
       name        = "date"
@@ -34,6 +37,9 @@ resource "google_bigquery_table" "sp500" {
   dataset_id  = google_bigquery_dataset.sp500_vol.dataset_id
   table_id    = "sp500"
   description = "Daily SPY end-of-day prices from Tiingo, used as S&P 500 proxy."
+
+  # data can be reloaded, see ADR 1
+  deletion_protection = false
 
   schema = jsonencode([
     {
@@ -62,6 +68,9 @@ resource "google_bigquery_table" "features" {
   dataset_id  = google_bigquery_dataset.sp500_vol.dataset_id
   table_id    = "features"
   description = "Daily features and label."
+
+  # rebuilt on each run, see ADR 5
+  deletion_protection = false
 
   schema = jsonencode([
     {
