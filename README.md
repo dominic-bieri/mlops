@@ -1,6 +1,7 @@
 # S&P 500 Realized Volatility Forecast
 
 MLOps HS26. Predicts how much the S&P 500 will move over the next 5 trading days, updated after each US trading day.
+The forecast is the volatility of SPY as a proxy for the S&P 500. It is not a trading signal.
 
 - [Proposal](docs/proposal.pdf)
 - [ADRs](docs/adr/)
