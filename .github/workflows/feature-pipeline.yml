@@ -3,7 +3,9 @@ name: Feature pipeline
 on:
   # morning after each US trading day, FRED has the VIX by then
   schedule:
-    - cron: "0 13 * * 2-6"
+    # off the hour, GitHub delays or drops runs at :00 under load
+    - cron: "23 9 * * 2-6"
+      timezone: "America/New_York"
   workflow_dispatch:
 
 permissions:
