@@ -15,7 +15,7 @@ The proposal planned one table for all data and features, and two scripts: one f
 - One ingest script decides on each run what to fetch:
   - Table empty: everything since 1993-01-29 (first SPY trading day)
   - Table filled: only from the latest stored date minus 7 days
-- Rows from the start date on are deleted and then loaded again
+- Only days not yet in the table are added, stored rows are never changed (ADR 8)
 
 ## Consequences
 
@@ -25,4 +25,3 @@ The proposal planned one table for all data and features, and two scripts: one f
 - If the job did not run for some days, the next run fills the gap
 - FRED sometimes publishes a value one day late, the 7 days overlap picks it up
 - Running the script twice does not create duplicates
-- If loading fails after the delete, up to 7 days are missing until the next run fills them again
