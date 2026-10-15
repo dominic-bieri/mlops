@@ -10,6 +10,7 @@ dependencies = [
     "python-dotenv==1.2.4",
     "google-cloud-bigquery[pandas]==3.46.1",
     "numpy==2.5.4",
+    "scikit-learn==1.9.1",
 ]
 
 [dependency-groups]

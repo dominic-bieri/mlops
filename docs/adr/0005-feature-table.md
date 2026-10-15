@@ -3,6 +3,7 @@
 ## Context
 
 Features are built from `sp500` and `vix`. The data is small (about 8500 rows).
+The label of a day is only known 5 trading days later.
 
 ## Decision
 
@@ -15,7 +16,9 @@ Features are built from `sp500` and `vix`. The data is small (about 8500 rows).
 
 ## Consequences
 
-- Simple code, easy to test
 - Table is replaced in one step, if the load fails the old data stays
+- Labels of the last 5 days are filled in by a later run, no single rows have to be updated
+- A changed formula applies to the whole history, no migration needed
+- Prices are fetched from the APIs only once, then read from the raw tables (ADR 2)
 - Days without VIX value are dropped, `vix_change_5d` then spans 6 trading days (rare)
-- Old states by date filter, raw data never changes (ADR 3)
+- Past days get the same values on each rebuild, as long as the code doesn't change
