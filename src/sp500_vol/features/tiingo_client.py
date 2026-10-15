@@ -30,7 +30,7 @@ class TiingoClient:
 
 
 def to_spy_frame(prices: list[dict[str, Any]]) -> pd.DataFrame:
-    df = pd.DataFrame(prices, columns=["date", "close", "divCash"])
+    df = pd.DataFrame(prices, columns=["date", "open", "high", "low", "close", "divCash"])
     df = df.rename(columns={"divCash": "div_cash"})
 
     df["date"] = pd.to_datetime(df["date"]).dt.date

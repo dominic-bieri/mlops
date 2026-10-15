@@ -25,23 +25,29 @@ FEATURE_COLUMNS = [
 LABEL_COLUMN = "rv_next_5d"
 
 
-def realized_vol(log_returns: pd.Series, window: int) -> pd.Series:
-    # percent per year, like the VIX
-    squared = log_returns**2
-    mean_squared = squared.rolling(window).mean()
-    return np.sqrt(mean_squared * TRADING_DAYS_PER_YEAR) * 100
+def daily_variance(df: pd.DataFrame) -> pd.Series:
+    previous_close = df["close"].shift(1)
+    overnight = np.log((df["open"] + df["div_cash"]) / previous_close)
+    high_low = np.log(df["high"] / df["low"])
+    open_close = np.log(df["close"] / df["open"])
+    return overnight**2 + 0.5 * high_low**2 - (2 * np.log(2) - 1) * open_close**2
+
+
+def realized_vol(daily_var: pd.Series, window: int) -> pd.Series:
+    mean_var = daily_var.rolling(window).mean()
+    return np.sqrt(mean_var * TRADING_DAYS_PER_YEAR) * 100
 
 
 def build_spy_features(sp500: pd.DataFrame) -> pd.DataFrame:
     df = sp500.sort_values("date").reset_index(drop=True)
 
-    # dividend added back, see ADR 0003
     previous_close = df["close"].shift(1)
     df["log_return"] = np.log((df["close"] + df["div_cash"]) / previous_close)
     df["abs_log_return"] = df["log_return"].abs()
 
+    daily_var = daily_variance(df)
     for window in RV_WINDOWS:
-        df[f"rv_{window}d"] = realized_vol(df["log_return"], window)
+        df[f"rv_{window}d"] = realized_vol(daily_var, window)
 
     # value at t+5 covers t+1..t+5
     df[LABEL_COLUMN] = df[f"rv_{HORIZON}d"].shift(-HORIZON)
@@ -59,10 +65,8 @@ def build_features(sp500: pd.DataFrame, vix: pd.DataFrame) -> pd.DataFrame:
     spy_features = build_spy_features(sp500)
     vix_features = build_vix_features(vix)
 
-    # only days with both SPY and VIX
     df = spy_features.merge(vix_features, on="date", how="inner")
 
-    # first days have no full window
     df = df.dropna(subset=FEATURE_COLUMNS)
 
     columns = ["date"] + FEATURE_COLUMNS + [LABEL_COLUMN]
@@ -76,7 +80,6 @@ def main() -> None:
     vix = bq.read_table("vix")
     features = build_features(sp500, vix)
 
-    # full rebuild, small table
     bq.replace_all(features, "features")
     logger.info("features: %d rows", len(features))
 

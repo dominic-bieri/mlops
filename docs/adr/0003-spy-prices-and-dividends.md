@@ -9,7 +9,7 @@ But it changes all past prices every time a new dividend is paid, so stored data
 
 ## Decision
 
-- Store the raw closing price (`close`) and the dividend of the day (`div_cash`), not `adjClose`
+- Store the raw prices (`open`, `high`, `low`, `close`) and the dividend of the day (`div_cash`), not `adjClose`
 - When computing daily returns, add the dividend back on dividend days
 - No correction for stock splits, because SPY never had one
 - No historical "as known back then" data (e.g. from ALFRED): VIX and SPY prices are not changed after they are published
