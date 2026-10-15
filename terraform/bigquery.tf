@@ -13,7 +13,6 @@ resource "google_bigquery_table" "vix" {
   table_id    = "vix"
   description = "Daily VIX close from FRED (series VIXCLS)."
 
-  # data can be reloaded, see ADR 2
   deletion_protection = false
 
   schema = jsonencode([
@@ -29,6 +28,12 @@ resource "google_bigquery_table" "vix" {
       mode        = "REQUIRED"
       description = "VIX closing level."
     },
+    {
+      name        = "loaded_at"
+      type        = "TIMESTAMP"
+      mode        = "REQUIRED"
+      description = "When the row was first loaded (UTC)."
+    },
   ])
 }
 
@@ -38,7 +43,6 @@ resource "google_bigquery_table" "sp500" {
   table_id    = "sp500"
   description = "Daily SPY end-of-day prices from Tiingo, used as S&P 500 proxy."
 
-  # data can be reloaded, see ADR 2
   deletion_protection = false
 
   schema = jsonencode([
@@ -78,6 +82,12 @@ resource "google_bigquery_table" "sp500" {
       mode        = "REQUIRED"
       description = "Cash dividend paid on this day."
     },
+    {
+      name        = "loaded_at"
+      type        = "TIMESTAMP"
+      mode        = "REQUIRED"
+      description = "When the row was first loaded (UTC)."
+    },
   ])
 }
 
@@ -87,7 +97,6 @@ resource "google_bigquery_table" "features" {
   table_id    = "features"
   description = "Daily features and label."
 
-  # rebuilt on each run, see ADR 5
   deletion_protection = false
 
   schema = jsonencode([
