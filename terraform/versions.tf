@@ -8,8 +8,7 @@ terraform {
     }
   }
 
-  # Bucket name is set at `terraform init` time (see README) since
-  # backend config can't reference variables.
+  # bucket set at terraform init, see README
   backend "gcs" {}
 }
 
