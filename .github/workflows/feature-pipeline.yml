@@ -1,10 +1,11 @@
 name: Feature pipeline
 
 on:
-  # morning after each US trading day, FRED has the VIX by then
+  # morning after each US trading day, after FRED publishes the VIX (shortly after 9:30 New York time)
   schedule:
     # off the hour, GitHub delays or drops runs at :00 under load
-    - cron: "23 9 * * 2-6"
+    # https://github.com/orgs/community/discussions/147369
+    - cron: "17 10 * * 2-6"
       timezone: "America/New_York"
   workflow_dispatch:
 
