@@ -26,7 +26,10 @@ $$\mathrm{RV}_t^{(n)} = 100\sqrt{252 \cdot \bar{v}}$$
 - $\bar{v}$: mean of $v$ over the last $n$ days, $\cdot 252$: per year, $\sqrt{\ }$: standard deviation, $\cdot 100$: percent
 - Example: $\mathrm{RV} = 20$ means the price moves about 20 % in a normal year
 - Label: $y_t = \mathrm{RV}_{t+5}^{(5)}$, the volatility of days $t+1$ to $t+5$
-- Same function for features, label and baseline
+- Same function for all of these, so they are on the same scale:
+  - Features `rv_1d` to `rv_60d`: how calm the market was up to day $t$
+  - Label `rv_next_5d`: what the model predicts
+  - Baselines: `rv_20d` as forecast, HAR-RV on `rv_1d`, `rv_5d`, `rv_22d`
 - Why this one: it gives one value per day, so it is simple to use for any window, and unlike Parkinson and Garman-Klass it includes the overnight jump from the previous close
 
 ## Consequences
