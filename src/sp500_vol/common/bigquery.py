@@ -19,7 +19,8 @@ class BigQueryClient:
         table_id = self.get_table_id(table)
         sql = f"SELECT * FROM `{table_id}`"
 
-        return self.client.query(sql).to_dataframe()
+        # REST is enough for small tables, no Storage API warning
+        return self.client.query(sql).to_dataframe(create_bqstorage_client=False)
 
     def get_dates(self, table: str) -> set[date]:
         table_id = self.get_table_id(table)
