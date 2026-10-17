@@ -16,7 +16,7 @@ jobs:
   run:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # one run at a time, both write to BigQuery
+    # one run at a time, so two runs never write to BigQuery together
     concurrency:
       group: feature-pipeline
       cancel-in-progress: false
