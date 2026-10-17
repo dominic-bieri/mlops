@@ -7,41 +7,72 @@ from sklearn.linear_model import LinearRegression
 from sp500_vol.common.bigquery import BigQueryClient
 from sp500_vol.features.build import HORIZON, LABEL_COLUMN
 
-TRAIN_END = date(2023, 12, 31)
-TEST_START = date(2024, 1, 1)
+# windows end at the newest labelled day and move forward with it
+TEST_MONTHS = 12
+VAL_MONTHS = 24
 VIX_STRESSED = 20
 
 HAR_COLUMNS = ["rv_1d", "rv_5d", "rv_22d"]
 
 
-def split(features: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+def months_before(day: date, months: int) -> date:
+    timestamp = pd.Timestamp(day) - pd.DateOffset(months=months)
+    return timestamp.date()
+
+
+def get_cutoff(features: pd.DataFrame) -> date:
+    labelled = features.dropna(subset=[LABEL_COLUMN])
+    return labelled["date"].max()
+
+
+def split(features: pd.DataFrame, cutoff: date) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     labelled = features.dropna(subset=[LABEL_COLUMN]).sort_values("date")
-    # gap, so no training label reaches into the test period
-    train = labelled[labelled["date"] <= TRAIN_END].iloc[:-HORIZON]
-    test = labelled[labelled["date"] >= TEST_START]
-    return train, test
+    labelled = labelled[labelled["date"] <= cutoff]
+
+    test_start = months_before(cutoff, TEST_MONTHS)
+    val_start = months_before(test_start, VAL_MONTHS)
+
+    # gap of HORIZON rows, so no label reaches into the next window
+    train = labelled[labelled["date"] <= val_start].iloc[:-HORIZON]
+    in_val = (labelled["date"] > val_start) & (labelled["date"] <= test_start)
+    val = labelled[in_val].iloc[:-HORIZON]
+    test = labelled[labelled["date"] > test_start]
+    return train, val, test
+
+
+def get_errors(df: pd.DataFrame, har: LinearRegression, vix_factor: float) -> pd.DataFrame:
+    label = df[LABEL_COLUMN]
+    return pd.DataFrame(
+        {
+            "rv_20d": (df["rv_20d"] - label).abs(),
+            "har_rv": (har.predict(df[HAR_COLUMNS]) - label).abs(),
+            "vix_scaled": (vix_factor * df["vix"] - label).abs(),
+        }
+    )
 
 
 def main() -> None:
     features = BigQueryClient().read_table("features")
-    train, test = split(features)
+    cutoff = get_cutoff(features)
+    train, val, test = split(features, cutoff)
+    print(f"cutoff: {cutoff}")
+    print(f"train: {train['date'].min()} to {train['date'].max()}")
+    print(f"val:   {val['date'].min()} to {val['date'].max()}")
+    print(f"test:  {test['date'].min()} to {test['date'].max()}")
 
     har = LinearRegression().fit(train[HAR_COLUMNS], train[LABEL_COLUMN])
     vix_factor = train[LABEL_COLUMN].mean() / train["vix"].mean()
 
-    label = test[LABEL_COLUMN]
-    errors = pd.DataFrame(
-        {
-            "rv_20d": (test["rv_20d"] - label).abs(),
-            "har_rv": (har.predict(test[HAR_COLUMNS]) - label).abs(),
-            "vix_scaled": (vix_factor * test["vix"] - label).abs(),
-        }
-    )
     print(f"vix factor: {vix_factor:.2f}")
-    print(f"mae since {TEST_START}:\n{errors.mean().round(2).to_string()}")
 
-    errors["year"] = pd.to_datetime(test["date"]).dt.year
-    errors["days"] = np.where(test["vix"] > VIX_STRESSED, "stressed", "calm")
+    test_errors = get_errors(test, har, vix_factor)
+    print(f"mae on test:\n{test_errors.mean().round(2).to_string()}")
+
+    # baselines are fitted on train only, so val is unseen too and adds more years
+    unseen = pd.concat([val, test])
+    errors = get_errors(unseen, har, vix_factor)
+    errors["year"] = pd.to_datetime(unseen["date"]).dt.year
+    errors["days"] = np.where(unseen["vix"] > VIX_STRESSED, "stressed", "calm")
     print(errors.groupby(["year", "days"]).mean().round(2).to_string())
 
 
