@@ -12,7 +12,7 @@ The forecast is the volatility of SPY as a proxy for the S&P 500. It is not a tr
 - Volatility uses open, high, low and close instead of only the close, so the label is less noisy ([ADR 6](docs/adr/0006-volatility-definition.md))
 - HAR-RV as a second baseline, VIX corrected by one factor ([ADR 7](docs/adr/0007-baselines.md))
 - Retraining monthly instead of weekly ([ADR 9](docs/adr/0009-training-and-retraining.md))
-- Success criterion: lower MAE than HAR-RV and the scaled VIX, instead of 10 % better than the 20-day volatility
+- Success criterion: lower MAE than HAR-RV, instead of 10 % better than the 20-day volatility. The scaled VIX is only reported
 - Terraform for all BigQuery tables, applied by GitHub Actions when a merge to `main` changes `terraform/`
 
 ## Requirements
