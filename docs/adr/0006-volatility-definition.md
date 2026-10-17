@@ -10,17 +10,22 @@ There are other range-based estimators (Parkinson, Garman-Klass, Rogers-Satchell
 
 ## Decision
 
-- Daily variance with the Garman-Klass-Yang-Zhang formula ([overview of the estimators](https://portfoliooptimizer.io/blog/range-based-volatility-estimators-overview-and-examples-of-usage/)): open $O$, high $H$, low $L$, close $C$ and the jump from the previous close, with the dividend $D$ added back to the open (ADR 3)
+- Daily variance $v_t$ with the Garman-Klass-Yang-Zhang formula ([overview of the estimators](https://portfoliooptimizer.io/blog/range-based-volatility-estimators-overview-and-examples-of-usage/)), in two parts: overnight jump + move during the day
 
-$$j_t = \ln\frac{O_t + D_t}{C_{t-1}}, \quad h_t = \ln\frac{H_t}{L_t}, \quad c_t = \ln\frac{C_t}{O_t}$$
+$$v_t = \underbrace{j_t^2}_{\text{overnight}} + \underbrace{0.5\,h_t^2 - 0.39\,c_t^2}_{\text{during the day (Garman-Klass)}}$$
 
-$$v_t = j_t^2 + \frac{1}{2}h_t^2 - (2\ln 2 - 1)\,c_t^2$$
-
+- $j_t = \ln\frac{O_t + D_t}{C_{t-1}}$: yesterday's close -> today's open, dividend added back (ADR 3)
+- $h_t = \ln\frac{H_t}{L_t}$: today's low -> today's high
+- $c_t = \ln\frac{C_t}{O_t}$: today's open -> today's close
+- $\ln$ of a ratio is about the move in percent, squared so only the size counts, not the direction
+- Weights from Garman-Klass, $0.39 \approx 2\ln 2 - 1$ (code uses the exact value)
 - Volatility over $n$ days in percent per year, like the VIX
 
-$$\mathrm{RV}_t^{(n)} = 100\sqrt{\frac{252}{n}\sum_{i=0}^{n-1} v_{t-i}}$$
+$$\mathrm{RV}_t^{(n)} = 100\sqrt{252 \cdot \bar{v}}$$
 
-- Label: $y_t = \mathrm{RV}_{t+5}^{(5)}$, the volatility of the next 5 days
+- $\bar{v}$: mean of $v$ over the last $n$ days, $\cdot 252$: per year, $\sqrt{\ }$: standard deviation, $\cdot 100$: percent
+- Example: $\mathrm{RV} = 20$ means the price moves about 20 % in a normal year
+- Label: $y_t = \mathrm{RV}_{t+5}^{(5)}$, the volatility of days $t+1$ to $t+5$
 - Same function for features, label and baseline
 - Why this one: it gives one value per day, so it is simple to use for any window, and unlike Parkinson and Garman-Klass it includes the overnight jump from the previous close
 
