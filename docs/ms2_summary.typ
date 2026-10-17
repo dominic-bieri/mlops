@@ -20,7 +20,7 @@
 - *Works now:* Terraform creates the BigQuery tables. CI runs ruff, pytest and the Terraform checks on every pull request.
 - *Decision:* The volatility uses open, high, low and close, not only the close. With 5 daily returns the label was too noisy.
 - *Decision:* `sp500` and `vix` hold the raw data. Rows are only added, so a run only fetches the last few days. `features` is rebuilt on every run, because it is small and the labels of the last 5 days are filled in later.
-- *Decision:* The model has to beat HAR-RV and the scaled VIX. From 2024 on, HAR-RV (MAE 3.88) and the scaled VIX (3.84) are already clearly better than the 20-day baseline (4.68).
+- *Decision:* The model has to beat HAR-RV, the scaled VIX is only reported. On the last 12 months (until 2026-10-08), HAR-RV (MAE 3.42) and the scaled VIX (3.46) are already better than the 20-day baseline (3.78).
 - *What it cost:* Most time went into the deployment. GitHub Actions logs in to Google Cloud without a stored key (Workload Identity Federation), and each workflow only gets the roles it needs.
 - *Risk:* GitHub Actions often starts scheduled runs late or skips them, mostly at the full hour (#link("https://github.com/orgs/community/discussions/147369")[community discussion]). I saw this with my own runs too. A late run does no harm, and a skipped day is loaded by the next run, because each run fetches everything since the last date in BigQuery. I watch this until MS3. If runs are still skipped often, an external scheduler like cron-job.org starts the workflow (ADR 8).
 - *Not done yet:* Training, inference and the model column in the yearly table (A1, B1) come in MS3.
@@ -43,8 +43,8 @@ More details are in the ADRs in #link(repo + "/tree/main/docs/adr")[`docs/adr`].
   The forecast for a trading day is made the next morning at 10:17 New York time, because FRED usually publishes the VIX shortly after 9:30. The market is already open by then, but the forecast only uses data up to the previous close. Each raw row stores when it was first loaded (`loaded_at`). Training only uses rows where all 5 future days are known. \
   Files: #file("docs/adr/0008-issue-time-and-label-maturity.md"), #file("src/sp500_vol/features/ingest.py"), #file("src/sp500_vol/evaluation/baselines.py")
 - *B4: Training, promotion and retraining cadence* - Changed \
-  LightGBM with L1 loss, because success is measured with MAE. Grid search with training until 2020, validation on 2021–2023 and one test from 2024. Monthly retraining: a new model is only promoted if its MAE on the last 3 months beats the current model, HAR-RV and the scaled VIX, and is then trained again on all data. \
-  Files: #file("docs/adr/0009-training-and-retraining.md")
+  LightGBM with L1 loss, because success is measured with MAE. Retraining once a month on a rolling split (test: last 12 months), because fixed dates don't fit monthly retraining. Parameters are chosen on val. A new model is only registered if it beats HAR-RV on test. Details follow in MS3. \
+  Files: #file("docs/adr/0009-training-and-retraining.md"), #file("src/sp500_vol/evaluation/baselines.py")
 - *B1: Scope of the output* - Partly \
   The README says the forecast is SPY volatility as a proxy for the S&P 500, not a trading signal. The A1 table also splits calm and stressed days (VIX above 20). \
   Files: #file("README.md"), #file("src/sp500_vol/evaluation/baselines.py")
