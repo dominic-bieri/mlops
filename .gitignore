@@ -18,6 +18,13 @@ __pycache__/
 # secrets
 .env
 
+# data, experiments, models
+data/
+mlruns/
+models/
+*.pkl
+*.joblib
+
 # terraform
 terraform/.terraform/
 terraform/*.tfstate
