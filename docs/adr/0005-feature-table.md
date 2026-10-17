@@ -9,6 +9,7 @@ The label of a day is only known 5 trading days later.
 
 - Compute features in Python (pandas)
 - Rebuild the whole `features` table on each run (`WRITE_TRUNCATE_DATA`, keeps schema)
+- A snapshot of each version is kept (ADR 10)
 - Volatility in percent per year, like the VIX
 - Label in the same table, empty for the last 5 days
 - Feature store: the BigQuery `features` table, used by training and inference
