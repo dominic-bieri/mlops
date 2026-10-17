@@ -19,9 +19,10 @@ $$\hat{y}_t = \beta_0 + \beta_1 \mathrm{RV}_t^{(1)} + \beta_2 \mathrm{RV}_t^{(5)
 $$c = \frac{\bar{y}}{\overline{\mathrm{VIX}}} \approx 0.8, \qquad \hat{y}_t = c \cdot \mathrm{VIX}_t$$
 
 - HAR-RV and the factor are fitted on training data only
-- Model, 20-day volatility, HAR-RV and scaled VIX in one table per year
+- Model, 20-day volatility, HAR-RV and scaled VIX in one table per year, over val and test (both unseen by the baselines)
 - Each year split into calm days ($\mathrm{VIX}_t \le 20$) and stressed days ($\mathrm{VIX}_t > 20$)
-- Success criterion: from 2024 on, the model has a lower MAE than HAR-RV and the scaled VIX (instead of 10 % better than the 20-day volatility)
+- Success criterion: on the test window (last 12 months, ADR 9), the model has a lower MAE than HAR-RV (instead of 10 % better than the 20-day volatility)
+- The scaled VIX is only reported, not part of the criterion
 
 ## Consequences
 
