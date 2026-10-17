@@ -26,14 +26,10 @@ def main() -> None:
     features = BigQueryClient().read_table("features")
     train, test = split(features)
 
-    # HAR-RV (ADR 7): y = b0 + b1 * rv_1d + b2 * rv_5d + b3 * rv_22d, fitted on train only
     har = LinearRegression().fit(train[HAR_COLUMNS], train[LABEL_COLUMN])
-
-    # scaled VIX (ADR 7): y = c * vix, c = mean label / mean vix
-    # c < 1 removes the risk premium, the VIX is usually higher than the real volatility
+    # removes the risk premium (ADR 7)
     vix_factor = train[LABEL_COLUMN].mean() / train["vix"].mean()
 
-    # absolute error |prediction - label|, the mean of it is the MAE
     label = test[LABEL_COLUMN]
     errors = pd.DataFrame(
         {

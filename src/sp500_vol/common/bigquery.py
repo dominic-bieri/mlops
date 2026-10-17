@@ -38,7 +38,7 @@ class BigQueryClient:
         self.load(df, table, "WRITE_TRUNCATE_DATA")
 
     def load(self, df: pd.DataFrame, table: str, write_disposition: str) -> None:
-        # nothing to add, and an empty replace would wipe the table
+        # empty replace would wipe the table
         if df.empty:
             return
 
