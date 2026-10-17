@@ -4,6 +4,7 @@ import pytest
 
 from sp500_vol.features.build import (
     FEATURE_COLUMNS,
+    HORIZON,
     LABEL_COLUMN,
     RV_WINDOWS,
     build_features,
@@ -65,8 +66,8 @@ def test_last_five_days_have_no_label() -> None:
     df = build_features(make_sp500(), make_vix())
 
     labels = df[LABEL_COLUMN]
-    assert labels.tail(5).isna().all()
-    assert labels.iloc[:-5].notna().all()
+    assert labels.tail(HORIZON).isna().all()
+    assert labels.iloc[:-HORIZON].notna().all()
 
 
 def test_first_days_without_full_window_are_dropped() -> None:
