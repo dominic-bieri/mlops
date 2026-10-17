@@ -11,7 +11,7 @@ The forecast is the volatility of SPY as a proxy for the S&P 500. It is not a tr
 
 ![System design](docs/media/System_Design.svg)
 
-- Feature pipeline: loads SPY and VIX into BigQuery and builds the `features` table, daily ([`src/sp500_vol/features/`](src/sp500_vol/features/))
+- Feature pipeline: loads SPY and VIX into BigQuery and builds the `features` table with a versioned snapshot, daily ([`src/sp500_vol/features/`](src/sp500_vol/features/))
 - Training pipeline: MS3
 - Inference pipeline and UI: MS4
 
@@ -21,6 +21,7 @@ The forecast is the volatility of SPY as a proxy for the S&P 500. It is not a tr
 - HAR-RV as a second baseline, VIX corrected by one factor ([ADR 7](docs/adr/0007-baselines.md))
 - Retraining monthly instead of weekly ([ADR 9](docs/adr/0009-training-and-retraining.md))
 - Success criterion: lower MAE than HAR-RV, instead of 10 % better than the 20-day volatility. The scaled VIX is only reported
+- Each `features` version is kept as a BigQuery snapshot with its Git commit ([ADR 10](docs/adr/0010-feature-versioning.md))
 - Terraform for all BigQuery tables, applied by GitHub Actions when a merge to `main` changes `terraform/`
 
 ## Requirements
