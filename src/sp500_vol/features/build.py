@@ -27,12 +27,7 @@ FEATURE_COLUMNS = [
 LABEL_COLUMN = "rv_next_5d"
 
 
-# Garman-Klass-Yang-Zhang variance of one day (ADR 6):
-#   v = j^2 + 0.5 * h^2 - (2 ln 2 - 1) * c^2
-#   j = ln((open + dividend) / previous close), the overnight jump
-#   h = ln(high / low), the range during the day
-#   c = ln(close / open), the move from open to close
-# bigger v = the price moved more on that day
+# Garman-Klass-Yang-Zhang, formula in ADR 6
 def daily_variance(df: pd.DataFrame) -> pd.Series:
     previous_close = df["close"].shift(1)
     overnight = np.log((df["open"] + df["div_cash"]) / previous_close)
@@ -41,8 +36,7 @@ def daily_variance(df: pd.DataFrame) -> pd.Series:
     return overnight**2 + 0.5 * high_low**2 - (2 * np.log(2) - 1) * open_close**2
 
 
-# RV = 100 * sqrt(252 * mean of v over the last n days)
-# in percent per year, like the VIX: RV 20 = the price moves about 20 % in a typical year
+# percent per year, like the VIX
 def realized_vol(daily_var: pd.Series, window: int) -> pd.Series:
     mean_var = daily_var.rolling(window).mean()
     return np.sqrt(mean_var * TRADING_DAYS_PER_YEAR) * 100
@@ -51,7 +45,7 @@ def realized_vol(daily_var: pd.Series, window: int) -> pd.Series:
 def build_spy_features(sp500: pd.DataFrame) -> pd.DataFrame:
     df = sp500.sort_values("date").reset_index(drop=True)
 
-    # dividend added back, else the drop on the dividend day looks like a loss (ADR 3)
+    # dividend added back (ADR 3)
     previous_close = df["close"].shift(1)
     df["log_return"] = np.log((df["close"] + df["div_cash"]) / previous_close)
     df["abs_log_return"] = df["log_return"].abs()
