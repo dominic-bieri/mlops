@@ -7,6 +7,14 @@ The forecast is the volatility of SPY as a proxy for the S&P 500. It is not a tr
 - [MS2 summary](docs/ms2_summary.pdf)
 - [ADRs](docs/adr/)
 
+## Architecture
+
+![System design](docs/media/System_Design.svg)
+
+- Feature pipeline: loads SPY and VIX into BigQuery and builds the `features` table, daily ([`src/sp500_vol/features/`](src/sp500_vol/features/))
+- Training pipeline: MS3
+- Inference pipeline and UI: MS4
+
 ## Changes since the proposal
 
 - Volatility uses open, high, low and close instead of only the close, so the label is less noisy ([ADR 6](docs/adr/0006-volatility-definition.md))
