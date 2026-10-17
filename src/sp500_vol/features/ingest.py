@@ -39,6 +39,7 @@ def main() -> None:
     vix_start = get_start(max(vix_dates, default=None))
     sp500_start = get_start(max(sp500_dates, default=None))
 
+    # fetch both before writing, so a failed source writes nothing (ADR 2)
     vix = fred.fetch_vix(vix_start, end)
     sp500 = tiingo.fetch_spy(sp500_start, end)
 
