@@ -1,3 +1,5 @@
+from datetime import UTC, datetime
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -10,6 +12,7 @@ from sp500_vol.features.build import (
     build_features,
     build_spy_features,
     daily_variance,
+    get_snapshot_name,
 )
 
 DAYS = 100
@@ -107,3 +110,8 @@ def test_without_intraday_move_variance_is_squared_return() -> None:
     assert daily_variance(sp500).iloc[1:].to_numpy() == pytest.approx(
         (df["log_return"] ** 2).iloc[1:].to_numpy()
     )
+
+
+def test_snapshot_name_has_date_and_time() -> None:
+    built_at = datetime(2026, 10, 17, 14, 17, 3, tzinfo=UTC)
+    assert get_snapshot_name(built_at) == "features_20261017_141703"
