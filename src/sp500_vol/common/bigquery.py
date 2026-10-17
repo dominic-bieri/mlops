@@ -25,23 +25,23 @@ class BigQueryClient:
         table_id = self.get_table_id(table)
         sql = f"SELECT date FROM `{table_id}`"
 
-        return {row["date"] for row in self.client.query(sql).result()}
+        dates = set()
+        for row in self.client.query(sql).result():
+            dates.add(row["date"])
+        return dates
 
     def append(self, df: pd.DataFrame, table: str) -> None:
-        if df.empty:
-            return
-
-        table_id = self.get_table_id(table)
-        job_config = bigquery.LoadJobConfig(write_disposition="WRITE_APPEND")
-        self.client.load_table_from_dataframe(df, table_id, job_config=job_config).result()
+        self.load(df, table, "WRITE_APPEND")
 
     def replace_all(self, df: pd.DataFrame, table: str) -> None:
-        # empty result would wipe the table
+        # keeps schema from Terraform
+        self.load(df, table, "WRITE_TRUNCATE_DATA")
+
+    def load(self, df: pd.DataFrame, table: str, write_disposition: str) -> None:
+        # nothing to add, and an empty replace would wipe the table
         if df.empty:
             return
 
         table_id = self.get_table_id(table)
-
-        # keeps schema from Terraform
-        job_config = bigquery.LoadJobConfig(write_disposition="WRITE_TRUNCATE_DATA")
+        job_config = bigquery.LoadJobConfig(write_disposition=write_disposition)
         self.client.load_table_from_dataframe(df, table_id, job_config=job_config).result()
