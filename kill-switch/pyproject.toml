@@ -1,0 +1,8 @@
+[project]
+name = "kill-switch"
+version = "0.1.0"
+requires-python = ">=3.14"
+dependencies = [
+    "functions-framework==3.10.2",
+    "google-cloud-billing==1.21.0",
+]
