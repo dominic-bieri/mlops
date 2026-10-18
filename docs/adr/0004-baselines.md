@@ -20,6 +20,7 @@ $$c = \frac{\bar{y}}{\overline{\mathrm{VIX}}} \approx 0.8, \qquad \hat{y}_t = c 
 
 - HAR-RV and the factor are fitted on the same data as the model, never on test
 - Model, 20-day volatility, HAR-RV and scaled VIX in one table per year, all fitted on train only, over val and test
+- Each training run saves the table as `errors_by_year.csv` in the model bucket
 - Each year split into calm days ($\mathrm{VIX}_t \le 20$) and stressed days ($\mathrm{VIX}_t > 20$)
 - Success criterion: on the test window (last 12 months, ADR 9), the model has a lower MAE than HAR-RV (instead of 10 % better than the 20-day volatility)
 - The scaled VIX is only reported, not part of the criterion
