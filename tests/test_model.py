@@ -1,3 +1,4 @@
+import lightgbm as lgb
 import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_absolute_error
@@ -49,3 +50,11 @@ def test_refit_uses_given_trees() -> None:
     model = refit_model(labelled, trees=30)
 
     assert model.booster_.num_trees() == 30
+
+
+def test_saved_model_keeps_feature_names() -> None:
+    model = refit_model(make_features(500, seed=1), trees=30)
+
+    booster = lgb.Booster(model_str=model.booster_.model_to_string())
+
+    assert booster.feature_name() == FEATURE_COLUMNS
