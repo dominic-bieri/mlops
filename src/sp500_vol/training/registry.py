@@ -26,12 +26,9 @@ class ModelRegistry:
             return None
         return lgb.Booster(model_str=blob.download_as_text())
 
-    def save_file(self, run_name: str, file_name: str, text: str) -> None:
-        blob = self.bucket.blob(f"{run_name}/{file_name}")
-        blob.upload_from_string(text)
-
     def register(self, model: lgb.LGBMRegressor, run_name: str, parent: str | None) -> str:
-        self.save_file(run_name, MODEL_FILE, model.booster_.model_to_string())
+        blob = self.bucket.blob(f"{run_name}/{MODEL_FILE}")
+        blob.upload_from_string(model.booster_.model_to_string())
         registered = aiplatform.Model.upload(
             display_name=MODEL_NAME,
             artifact_uri=f"gs://{self.bucket.name}/{run_name}",

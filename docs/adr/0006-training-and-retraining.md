@@ -15,6 +15,7 @@ Fixed dates (train until 2020, test from 2024) don't work with monthly retrainin
 - The current model only counts if it is younger than 6 months, so an old model can't block new ones forever
 - Saved as LightGBM text file, so it loads with any LightGBM version
 - Each run in Agent Platform Experiments, each registered model a new version of `sp500-vol` in the Model Registry
+- Only GitHub Actions logs runs and registers models, local code may not be committed (ADR 10)
 
 ## Consequences
 
