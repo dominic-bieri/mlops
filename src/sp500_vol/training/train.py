@@ -6,7 +6,12 @@ from google.cloud import aiplatform
 from sklearn.metrics import mean_absolute_error
 
 from sp500_vol.common.bigquery import BigQueryClient
-from sp500_vol.common.config import get_gcp_project_id, get_gcp_region, get_git_commit
+from sp500_vol.common.config import (
+    get_gcp_project_id,
+    get_gcp_region,
+    get_git_commit,
+    is_github_actions,
+)
 from sp500_vol.features.build import FEATURE_COLUMNS, LABEL_COLUMN, SNAPSHOT_PREFIX
 from sp500_vol.training.baselines import get_errors, get_errors_by_year
 from sp500_vol.training.model import fit_model, refit_model
@@ -43,7 +48,7 @@ def main() -> None:
     cutoff = get_cutoff(features)
     train, val, test = split(features, cutoff)
 
-    # fitted on train only, so val and test are unseen (ADR 7)
+    # fitted on train, val only chooses the trees (ADR 7)
     tuned = fit_model(train, val)
     unseen = pd.concat([val, test])
     errors_by_year = get_errors_by_year(tuned, train, unseen)
@@ -52,10 +57,18 @@ def main() -> None:
     train_val = pd.concat([train, val])
     model = refit_model(train_val, tuned.best_iteration_)
     errors = get_errors(model, train_val, test)
+    metrics = {
+        "test_mae": errors["model"].mean(),
+        "rv_20d_test_mae": errors["rv_20d"].mean(),
+        "har_rv_test_mae": errors["har_rv"].mean(),
+        "vix_scaled_test_mae": errors["vix_scaled"].mean(),
+    }
+    logger.info("metrics: %s", metrics)
 
-    registry = ModelRegistry()
-    run_name = datetime.now(UTC).strftime("run-%Y%m%d-%H%M%S")
-    registry.save_file(run_name, "errors_by_year.csv", errors_by_year.to_csv())
+    # local code may not be committed (ADR 10)
+    if not is_github_actions():
+        logger.info("local run, nothing logged or registered")
+        return
 
     aiplatform.init(
         project=get_gcp_project_id(),
@@ -63,6 +76,8 @@ def main() -> None:
         experiment=MODEL_NAME,
         experiment_tensorboard=False,
     )
+    registry = ModelRegistry()
+    run_name = datetime.now(UTC).strftime("run-%Y%m%d-%H%M%S")
     params = {
         "snapshot": snapshot,
         "git_commit": get_git_commit(),
@@ -72,14 +87,7 @@ def main() -> None:
         "num_leaves": model.num_leaves,
         "min_child_samples": model.min_child_samples,
     }
-    metrics = {
-        "test_mae": errors["model"].mean(),
-        "rv_20d_test_mae": errors["rv_20d"].mean(),
-        "har_rv_test_mae": errors["har_rv"].mean(),
-        "vix_scaled_test_mae": errors["vix_scaled"].mean(),
-    }
 
-    # run is logged first, so it exists even if the upload fails
     with aiplatform.start_run(run_name):
         aiplatform.log_params(params)
         aiplatform.log_metrics(metrics)
@@ -90,7 +98,9 @@ def main() -> None:
         if current is not None:
             parent = current.resource_name
             current_mae = get_current_mae(registry, current, test)
-            if current_mae is not None:
+            if current_mae is None:
+                logger.info("current model not comparable, only HAR-RV counts")
+            else:
                 aiplatform.log_metrics({"current_test_mae": current_mae})
                 best_mae = min(best_mae, current_mae)
 

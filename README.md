@@ -46,7 +46,7 @@ Google Cloud: [`docs/google-cloud.md`](docs/google-cloud.md), then [`terraform/R
 ```bash
 uv run python -m sp500_vol.features.ingest       # load VIX and SPY
 uv run python -m sp500_vol.features.build        # rebuild features
-uv run python -m sp500_vol.training.train        # train, errors per year, register if best
+uv run python -m sp500_vol.training.train        # train and show errors, registers only in GitHub Actions
 uv run pytest
 ```
 
