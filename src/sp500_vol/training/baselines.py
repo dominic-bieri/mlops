@@ -38,4 +38,5 @@ def get_errors_by_year(
     errors = get_errors(model, train, df)
     errors["year"] = pd.to_datetime(df["date"]).dt.year
     errors["days"] = np.where(df["vix"] > VIX_STRESSED, "stressed", "calm")
-    return errors.groupby(["year", "days"]).mean()
+    by_year = errors.groupby(["year", "days"]).mean()
+    return by_year.round(2)
