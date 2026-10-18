@@ -40,6 +40,10 @@ def split(features: pd.DataFrame, cutoff: date) -> tuple[pd.DataFrame, pd.DataFr
     return train, val, test
 
 
+def fit_har(train: pd.DataFrame) -> LinearRegression:
+    return LinearRegression().fit(train[HAR_COLUMNS], train[LABEL_COLUMN])
+
+
 def get_errors(df: pd.DataFrame, har: LinearRegression, vix_factor: float) -> pd.DataFrame:
     label = df[LABEL_COLUMN]
     return pd.DataFrame(
@@ -60,8 +64,8 @@ def main() -> None:
     print(f"val:   {val['date'].min()} to {val['date'].max()}")
     print(f"test:  {test['date'].min()} to {test['date'].max()}")
 
-    har = LinearRegression().fit(train[HAR_COLUMNS], train[LABEL_COLUMN])
-    # removes the risk premium (ADR 4)
+    har = fit_har(train)
+    # removes the risk premium (ADR 7)
     vix_factor = train[LABEL_COLUMN].mean() / train["vix"].mean()
 
     print(f"vix factor: {vix_factor:.2f}")

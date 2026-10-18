@@ -47,6 +47,7 @@ Google Cloud: [`docs/google-cloud.md`](docs/google-cloud.md), then [`terraform/R
 uv run python -m sp500_vol.features.ingest       # load VIX and SPY
 uv run python -m sp500_vol.features.build        # rebuild features
 uv run python -m sp500_vol.evaluation.baselines  # baseline errors per year
+uv run python -m sp500_vol.training.train        # train, compare with HAR-RV, log to Agent Platform
 uv run pytest
 ```
 
