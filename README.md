@@ -12,7 +12,7 @@ The forecast is the volatility of SPY as a proxy for the S&P 500. It is not a tr
 ![System design](docs/media/System_Design.svg)
 
 - Feature pipeline: loads SPY and VIX into BigQuery and builds the `features` table with a versioned snapshot, daily ([`src/sp500_vol/features/`](src/sp500_vol/features/))
-- Training pipeline: MS3
+- Training pipeline: trains LightGBM on the newest snapshot, registers it in Agent Platform if it beats HAR-RV, monthly ([`src/sp500_vol/training/`](src/sp500_vol/training/))
 - Inference pipeline and UI: MS4
 
 ## Changes since the proposal
@@ -47,11 +47,11 @@ Google Cloud: [`docs/google-cloud.md`](docs/google-cloud.md), then [`terraform/R
 uv run python -m sp500_vol.features.ingest       # load VIX and SPY
 uv run python -m sp500_vol.features.build        # rebuild features
 uv run python -m sp500_vol.evaluation.baselines  # baseline errors per year
-uv run python -m sp500_vol.training.train        # train, compare with HAR-RV, log to Agent Platform
+uv run python -m sp500_vol.training.train        # train, log run, register if better than HAR-RV
 uv run pytest
 ```
 
-Runs every morning after a US trading day in [GitHub Actions](.github/workflows/feature-pipeline.yml), started by [cron-job.org](https://cron-job.org) (ADR 5).
+Runs in GitHub Actions: [features](.github/workflows/feature-pipeline.yml) every morning after a US trading day, started by [cron-job.org](https://cron-job.org) (ADR 8), [training](.github/workflows/training-pipeline.yml) monthly.
 
 ## Backfill
 

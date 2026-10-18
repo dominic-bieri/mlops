@@ -14,3 +14,9 @@ variable "dataset_id" {
   type        = string
   default     = "sp500_vol"
 }
+
+variable "model_region" {
+  description = "Region for Agent Platform and the model bucket."
+  type        = string
+  default     = "europe-west6"
+}
