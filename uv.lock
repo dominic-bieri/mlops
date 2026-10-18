@@ -1281,6 +1281,8 @@ source = { editable = "." }
 dependencies = [
     { name = "google-cloud-aiplatform" },
     { name = "google-cloud-bigquery", extra = ["pandas"] },
+    { name = "google-cloud-storage" },
+    { name = "joblib" },
     { name = "lightgbm" },
     { name = "numpy" },
     { name = "pandas" },
@@ -1299,6 +1301,8 @@ dev = [
 requires-dist = [
     { name = "google-cloud-aiplatform", specifier = "==2.5.0" },
     { name = "google-cloud-bigquery", extras = ["pandas"], specifier = "==3.46.2" },
+    { name = "google-cloud-storage", specifier = "==3.17.1" },
+    { name = "joblib", specifier = "==1.6.0" },
     { name = "lightgbm", specifier = "==4.7.0" },
     { name = "numpy", specifier = "==2.5.4" },
     { name = "pandas", specifier = "==3.0.6" },
