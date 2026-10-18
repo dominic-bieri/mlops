@@ -1,35 +1,13 @@
 from datetime import date
 
-import numpy as np
 import pandas as pd
 import pytest
+from fake_data import make_data
 
 from sp500_vol.features.build import FEATURE_COLUMNS, HORIZON, LABEL_COLUMN, build_features
 from sp500_vol.features.ingest import only_new
 
-DAYS = 80
 BACKFILL_DAYS = 65
-
-
-def make_data(shock_day: int | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
-    dates = pd.bdate_range("2024-01-02", periods=DAYS).date
-    rng = np.random.default_rng(7)
-    returns = rng.normal(0, 0.01, DAYS)
-    if shock_day is not None:
-        returns[shock_day] = -0.10
-    close = 400 * np.exp(np.cumsum(returns))
-    sp500 = pd.DataFrame(
-        {
-            "date": dates,
-            "open": close,
-            "high": close * 1.005,
-            "low": close * 0.995,
-            "close": close,
-            "div_cash": 0.0,
-        }
-    )
-    vix = pd.DataFrame({"date": dates, "close": np.linspace(12, 20, DAYS)})
-    return sp500, vix
 
 
 def next_morning(day: date) -> pd.Timestamp:

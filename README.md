@@ -51,3 +51,8 @@ uv run pytest
 ```
 
 Runs daily in [GitHub Actions](.github/workflows/feature-pipeline.yml).
+
+## Docker
+
+No Dockerfile yet. The pipelines run in GitHub Actions with the pinned dependencies from `uv.lock`, an image would add nothing there.
+The Dockerfile comes with the inference pipeline and UI on Cloud Run (MS4).

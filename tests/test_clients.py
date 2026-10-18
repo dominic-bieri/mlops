@@ -15,8 +15,7 @@ def test_vix_skips_market_holidays() -> None:
 
     df = to_vix_frame(observations)
 
-    assert df["date"].tolist() == [date(2024, 1, 2)]
-    assert df["close"].tolist() == [13.2]
+    assert df.to_dict("records") == [{"date": date(2024, 1, 2), "close": 13.2}]
 
 
 def test_spy_maps_tiingo_fields_on_ex_dividend_day() -> None:
@@ -33,12 +32,15 @@ def test_spy_maps_tiingo_fields_on_ex_dividend_day() -> None:
 
     df = to_spy_frame(prices)
 
-    assert df["date"].tolist() == [date(2024, 3, 15)]
-    assert df["open"].tolist() == [510.21]
-    assert df["high"].tolist() == [511.70]
-    assert df["low"].tolist() == [508.12]
-    assert df["close"].tolist() == [509.83]
-    assert df["div_cash"].tolist() == [1.5949]
+    expected = {
+        "date": date(2024, 3, 15),
+        "open": 510.21,
+        "high": 511.70,
+        "low": 508.12,
+        "close": 509.83,
+        "div_cash": 1.5949,
+    }
+    assert df.to_dict("records") == [expected]
 
 
 def test_fred_error_does_not_leak_api_key(monkeypatch: pytest.MonkeyPatch) -> None:

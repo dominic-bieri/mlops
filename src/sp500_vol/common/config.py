@@ -21,6 +21,9 @@ def get_bq_dataset() -> str:
     return os.environ["BQ_DATASET"]
 
 
-# set by GitHub Actions
+def is_github_actions() -> bool:
+    return os.environ.get("GITHUB_ACTIONS") == "true"
+
+
 def get_git_commit() -> str:
     return os.environ.get("GITHUB_SHA", "local")
