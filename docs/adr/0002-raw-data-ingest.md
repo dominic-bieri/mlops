@@ -6,7 +6,7 @@ The project needs daily VIX values (from FRED) and SPY prices (from Tiingo) sinc
 The two sources do not always have values for the same days, and one source can fail while the other works.
 At the start, the tables in BigQuery are empty, so all past data has to be loaded once.
 After that, only the newest days are needed.
-The proposal planned one table for all data and features, and two scripts: one for the past data and one for the daily update.
+The proposal planned one table and two scripts.
 
 ## Decision
 

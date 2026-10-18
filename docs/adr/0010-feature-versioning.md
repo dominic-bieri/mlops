@@ -9,7 +9,8 @@ A model must be traceable to the exact data it was trained on.
 ## Decision
 
 - After each build, a BigQuery table snapshot of `features`, e.g. `features_20261017_141703` (UTC)
-- Description of the snapshot: the Git commit that built it (`GITHUB_SHA`, `local` outside GitHub Actions)
+- Description of the snapshot: the Git commit that built it (`GITHUB_SHA`)
+- Only GitHub Actions builds a snapshot, local code may not be committed
 - No expiration, one version is about 1 MB
 - `features` stays the current version, training and inference read it
 - Training (MS3) logs the snapshot name, so it can be trained again on the same data
