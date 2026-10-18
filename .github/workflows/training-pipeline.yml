@@ -1,0 +1,45 @@
+name: Training pipeline
+
+on:
+  # monthly (ADR 9), after the feature pipeline
+  schedule:
+    - cron: "37 12 1 * *"
+      timezone: "America/New_York"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: training-pipeline
+      cancel-in-progress: false
+    # Google roles are bound to this environment, see docs/google-cloud.md
+    environment: training-pipeline
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      GCP_REGION: europe-west6
+      BQ_DATASET: sp500_vol
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      # before auth, so the credentials file doesn't exist yet
+      - uses: astral-sh/setup-uv@v10.3.0
+
+      - name: Install dependencies
+        run: uv sync --locked --no-dev
+
+      - uses: google-github-actions/auth@v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+
+      - name: Train and register
+        run: uv run --no-sync python -m sp500_vol.training.train

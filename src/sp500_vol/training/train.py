@@ -1,17 +1,27 @@
 import logging
 from datetime import UTC, datetime
 
+import joblib
 import lightgbm as lgb
 import pandas as pd
-from google.cloud import aiplatform
+from google.cloud import aiplatform, storage
 from sklearn.metrics import mean_absolute_error
 
 from sp500_vol.common.bigquery import BigQueryClient
-from sp500_vol.common.config import get_gcp_project_id, get_gcp_region, get_git_commit
+from sp500_vol.common.config import (
+    get_gcp_project_id,
+    get_gcp_region,
+    get_git_commit,
+    get_model_bucket,
+)
 from sp500_vol.evaluation.baselines import HAR_COLUMNS, fit_har, get_cutoff, split
 from sp500_vol.features.build import FEATURE_COLUMNS, LABEL_COLUMN
 
 logger = logging.getLogger(__name__)
+
+MODEL_NAME = "sp500-vol"
+# registry needs an image, inference runs on Cloud Run (ADR 1)
+SERVING_IMAGE = "us-docker.pkg.dev/cloudrun/container/placeholder:latest"
 
 
 def fit_model(train: pd.DataFrame, val: pd.DataFrame) -> lgb.LGBMRegressor:
@@ -38,20 +48,32 @@ def fit_model(train: pd.DataFrame, val: pd.DataFrame) -> lgb.LGBMRegressor:
     return model
 
 
-def log_run(params: dict, metrics: dict) -> str:
-    aiplatform.init(
-        project=get_gcp_project_id(),
-        location=get_gcp_region(),
-        experiment="sp500-vol",
-        experiment_tensorboard=False,
-    )
+def register_model(model: lgb.LGBMRegressor, run_name: str) -> str:
+    joblib.dump(model, "model.joblib")
+    bucket = storage.Client().bucket(get_model_bucket())
+    bucket.blob(f"{run_name}/model.joblib").upload_from_filename("model.joblib")
 
-    run_name = datetime.now(UTC).strftime("run-%Y%m%d-%H%M%S")
+    # new version of the same model, becomes the default
+    parent = None
+    existing = aiplatform.Model.list(filter=f'display_name="{MODEL_NAME}"')
+    if existing:
+        parent = existing[0].resource_name
+
+    registered = aiplatform.Model.upload(
+        display_name=MODEL_NAME,
+        artifact_uri=f"gs://{get_model_bucket()}/{run_name}",
+        serving_container_image_uri=SERVING_IMAGE,
+        parent_model=parent,
+        labels={"run": run_name},
+    )
+    return registered.version_id
+
+
+def log_run(run_name: str, params: dict, metrics: dict) -> None:
     aiplatform.start_run(run_name)
     aiplatform.log_params(params)
     aiplatform.log_metrics(metrics)
     aiplatform.end_run()
-    return run_name
 
 
 def main() -> None:
@@ -74,6 +96,20 @@ def main() -> None:
     har_mae = mean_absolute_error(test[LABEL_COLUMN], har_prediction)
     logger.info("test mae: model %.2f, har_rv %.2f", test_mae, har_mae)
 
+    aiplatform.init(
+        project=get_gcp_project_id(),
+        location=get_gcp_region(),
+        experiment=MODEL_NAME,
+        experiment_tensorboard=False,
+    )
+    run_name = datetime.now(UTC).strftime("run-%Y%m%d-%H%M%S")
+
+    # only a model that beats HAR-RV is registered (ADR 9)
+    model_version = "none"
+    if test_mae < har_mae:
+        model_version = register_model(model, run_name)
+    logger.info("run: %s, model version: %s", run_name, model_version)
+
     params = {
         "snapshot": snapshot,
         "git_commit": get_git_commit(),
@@ -82,14 +118,14 @@ def main() -> None:
         "learning_rate": model.learning_rate,
         "num_leaves": model.num_leaves,
         "min_child_samples": model.min_child_samples,
+        "model_version": model_version,
     }
     metrics = {
         "val_mae": val_mae,
         "test_mae": test_mae,
         "har_rv_test_mae": har_mae,
     }
-    run_name = log_run(params, metrics)
-    logger.info("run: %s", run_name)
+    log_run(run_name, params, metrics)
 
 
 if __name__ == "__main__":
