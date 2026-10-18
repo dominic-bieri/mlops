@@ -21,7 +21,6 @@ def make_model(trees: int) -> lgb.LGBMRegressor:
 def fit_model(train: pd.DataFrame, val: pd.DataFrame) -> lgb.LGBMRegressor:
     model = make_model(MAX_TREES)
 
-    # number of trees chosen on val
     stop = lgb.early_stopping(50, verbose=False)
     model.fit(
         train[FEATURE_COLUMNS],
