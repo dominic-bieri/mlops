@@ -5,25 +5,22 @@
 The label, the 20-day baseline and the VIX comparison should all use the same volatility.
 With closing prices only, the 5-day label is based on just 5 returns and is very noisy.
 Tiingo also delivers open, high and low, which show how much the price moved during the day.
-I found the formula below with Claude and my own research.
-There are other range-based estimators (Parkinson, Garman-Klass, Rogers-Satchell, Yang-Zhang).
+I compared the common range-based estimators (Parkinson, Garman-Klass, Rogers-Satchell, Yang-Zhang) to find one that is accurate and still simple.
 
 ## Decision
 
-- Daily variance $v_t$ with the Garman-Klass-Yang-Zhang formula ([overview of the estimators](https://portfoliooptimizer.io/blog/range-based-volatility-estimators-overview-and-examples-of-usage/)), in two parts: overnight jump + move during the day
+- Garman-Klass-Yang-Zhang ([LuxAlgo](https://www.luxalgo.com/library/concept/garman-klass-yang-zhang-hybrid/), [Medium](https://derivvaluation.medium.com/garman-klass-yang-zhang-historical-volatility-calculation-volatility-analysis-in-python-2c83d3be20be)), variance over the last $n$ days
 
-$$v_t = \underbrace{j_t^2}_{\text{overnight}} + \underbrace{0.5\,h_t^2 - 0.39\,c_t^2}_{\text{during the day (Garman-Klass)}}$$
+$$\sigma^2 = \frac{1}{n}\sum_{i=1}^{n}\left[\left(\ln\frac{O_i}{C_{i-1}}\right)^2 + \frac{1}{2}\left(\ln\frac{H_i}{L_i}\right)^2 - (2\ln 2 - 1)\left(\ln\frac{C_i}{O_i}\right)^2\right]$$
 
-- $j_t = \ln\frac{O_t + D_t}{C_{t-1}}$: yesterday's close -> today's open, dividend added back (ADR 3)
-- $h_t = \ln\frac{H_t}{L_t}$: today's low -> today's high
-- $c_t = \ln\frac{C_t}{O_t}$: today's open -> today's close
+- $O_i, H_i, L_i, C_i$: open, high, low, close of day $i$, on dividend days the dividend is added to $O_i$ (ADR 3)
+- First part: overnight jump from yesterday's close, the rest: move during the day (Garman-Klass)
 - $\ln$ of a ratio is about the move in percent, squared so only the size counts, not the direction
-- Weights from Garman-Klass, $0.39 \approx 2\ln 2 - 1$ (code uses the exact value)
 - Volatility over $n$ days in percent per year, like the VIX
 
-$$\mathrm{RV}_t^{(n)} = 100\sqrt{252 \cdot \bar{v}}$$
+$$\mathrm{RV}_t^{(n)} = 100\sqrt{252 \cdot \sigma^2}$$
 
-- $\bar{v}$: mean of $v$ over the last $n$ days, $\cdot 252$: per year, $\sqrt{\ }$: standard deviation, $\cdot 100$: percent
+- $\cdot 252$: per year, $\sqrt{\ }$: standard deviation, $\cdot 100$: percent
 - Example: $\mathrm{RV} = 20$ means the price moves about 20 % in a normal year
 - Label: $y_t = \mathrm{RV}_{t+5}^{(5)}$, the volatility of days $t+1$ to $t+5$
 - Same function for all of these, so they are on the same scale:

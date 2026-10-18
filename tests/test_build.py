@@ -1,8 +1,6 @@
-from datetime import UTC, datetime
-
-import numpy as np
 import pandas as pd
 import pytest
+from fake_data import make_data
 
 from sp500_vol.features.build import (
     FEATURE_COLUMNS,
@@ -12,34 +10,11 @@ from sp500_vol.features.build import (
     build_features,
     build_spy_features,
     daily_variance,
-    get_snapshot_name,
 )
-
-DAYS = 100
-
-
-def make_sp500() -> pd.DataFrame:
-    dates = pd.bdate_range("2024-01-02", periods=DAYS).date
-    rng = np.random.default_rng(42)
-    returns = rng.normal(0, 0.01, DAYS)
-    close = 400 * np.exp(np.cumsum(returns))
-    open_ = close * np.exp(rng.normal(0, 0.003, DAYS))
-    high = np.maximum(open_, close) * 1.004
-    low = np.minimum(open_, close) * 0.996
-    return pd.DataFrame(
-        {"date": dates, "open": open_, "high": high, "low": low, "close": close, "div_cash": 0.0}
-    )
-
-
-def make_vix() -> pd.DataFrame:
-    dates = pd.bdate_range("2024-01-02", periods=DAYS).date
-    close = np.linspace(12, 20, DAYS)
-    return pd.DataFrame({"date": dates, "close": close})
 
 
 def test_features_do_not_look_into_the_future() -> None:
-    sp500 = make_sp500()
-    vix = make_vix()
+    sp500, vix = make_data()
     cut = 80
 
     changed_sp500 = sp500.copy()
@@ -60,13 +35,15 @@ def test_features_do_not_look_into_the_future() -> None:
 
 
 def test_label_is_realized_vol_of_next_five_days() -> None:
-    df = build_spy_features(make_sp500())
+    sp500, _ = make_data()
+
+    df = build_spy_features(sp500)
 
     assert df.loc[50, LABEL_COLUMN] == pytest.approx(df.loc[55, "rv_5d"])
 
 
 def test_last_five_days_have_no_label() -> None:
-    df = build_features(make_sp500(), make_vix())
+    df = build_features(*make_data())
 
     labels = df[LABEL_COLUMN]
     assert labels.tail(HORIZON).isna().all()
@@ -74,11 +51,10 @@ def test_last_five_days_have_no_label() -> None:
 
 
 def test_first_days_without_full_window_are_dropped() -> None:
-    sp500 = make_sp500()
+    sp500, vix = make_data()
 
-    df = build_features(sp500, make_vix())
+    df = build_features(sp500, vix)
 
-    # 1 day for the first return, then the longest window
     assert df["date"].iloc[0] == sp500.loc[max(RV_WINDOWS), "date"]
 
 
@@ -101,7 +77,7 @@ def test_dividend_drop_is_not_a_return() -> None:
 
 
 def test_without_intraday_move_variance_is_squared_return() -> None:
-    sp500 = make_sp500()
+    sp500, _ = make_data()
     for column in ["open", "high", "low"]:
         sp500[column] = sp500["close"]
 
@@ -110,8 +86,3 @@ def test_without_intraday_move_variance_is_squared_return() -> None:
     assert daily_variance(sp500).iloc[1:].to_numpy() == pytest.approx(
         (df["log_return"] ** 2).iloc[1:].to_numpy()
     )
-
-
-def test_snapshot_name_has_date_and_time() -> None:
-    built_at = datetime(2026, 10, 17, 14, 17, 3, tzinfo=UTC)
-    assert get_snapshot_name(built_at) == "features_20261017_141703"
