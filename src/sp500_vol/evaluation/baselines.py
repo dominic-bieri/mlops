@@ -1,11 +1,13 @@
 from datetime import date
 
+import lightgbm as lgb
 import numpy as np
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 
 from sp500_vol.common.bigquery import BigQueryClient
-from sp500_vol.features.build import HORIZON, LABEL_COLUMN
+from sp500_vol.features.build import FEATURE_COLUMNS, HORIZON, LABEL_COLUMN
+from sp500_vol.training.model import fit_model
 
 # windows end at the newest labelled day and move forward with it
 TEST_MONTHS = 12
@@ -44,10 +46,18 @@ def fit_har(train: pd.DataFrame) -> LinearRegression:
     return LinearRegression().fit(train[HAR_COLUMNS], train[LABEL_COLUMN])
 
 
-def get_errors(df: pd.DataFrame, har: LinearRegression, vix_factor: float) -> pd.DataFrame:
+# removes the risk premium (ADR 7)
+def get_vix_factor(train: pd.DataFrame) -> float:
+    return train[LABEL_COLUMN].mean() / train["vix"].mean()
+
+
+def get_errors(
+    df: pd.DataFrame, model: lgb.LGBMRegressor, har: LinearRegression, vix_factor: float
+) -> pd.DataFrame:
     label = df[LABEL_COLUMN]
     return pd.DataFrame(
         {
+            "model": (model.predict(df[FEATURE_COLUMNS]) - label).abs(),
             "rv_20d": (df["rv_20d"] - label).abs(),
             "har_rv": (har.predict(df[HAR_COLUMNS]) - label).abs(),
             "vix_scaled": (vix_factor * df["vix"] - label).abs(),
@@ -64,18 +74,18 @@ def main() -> None:
     print(f"val:   {val['date'].min()} to {val['date'].max()}")
     print(f"test:  {test['date'].min()} to {test['date'].max()}")
 
+    # val only chooses the number of trees
+    model = fit_model(train, val)
     har = fit_har(train)
-    # removes the risk premium (ADR 7)
-    vix_factor = train[LABEL_COLUMN].mean() / train["vix"].mean()
-
+    vix_factor = get_vix_factor(train)
     print(f"vix factor: {vix_factor:.2f}")
 
-    test_errors = get_errors(test, har, vix_factor)
+    test_errors = get_errors(test, model, har, vix_factor)
     print(f"mae on test:\n{test_errors.mean().round(2).to_string()}")
 
-    # baselines are fitted on train only, so val is unseen too and adds more years
+    # all fitted on train only, so val is unseen too and adds more years
     unseen = pd.concat([val, test])
-    errors = get_errors(unseen, har, vix_factor)
+    errors = get_errors(unseen, model, har, vix_factor)
     errors["year"] = pd.to_datetime(unseen["date"]).dt.year
     errors["days"] = np.where(unseen["vix"] > VIX_STRESSED, "stressed", "calm")
     print(errors.groupby(["year", "days"]).mean().round(2).to_string())

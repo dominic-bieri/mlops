@@ -16,7 +16,6 @@ variable "dataset_id" {
 }
 
 variable "model_region" {
-  description = "Region for Agent Platform and the model bucket."
+  description = "Region for Agent Platform and the model bucket, same as GCP_REGION."
   type        = string
-  default     = "europe-west6"
 }

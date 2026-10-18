@@ -61,6 +61,7 @@ jobs:
         working-directory: terraform
     env:
       TF_VAR_project_id: ${{ vars.GCP_PROJECT_ID }}
+      TF_VAR_model_region: ${{ vars.GCP_REGION }}
       TF_STATE_BUCKET: ${{ vars.GCP_TFSTATE_BUCKET }}
     steps:
       - uses: actions/checkout@v7.0.1

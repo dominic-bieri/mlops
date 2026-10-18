@@ -3,7 +3,7 @@ import pandas as pd
 from sklearn.metrics import mean_absolute_error
 
 from sp500_vol.features.build import FEATURE_COLUMNS, LABEL_COLUMN
-from sp500_vol.training.train import fit_model
+from sp500_vol.training.model import fit_model, refit_model
 
 
 def make_features(rows: int, seed: int) -> pd.DataFrame:
@@ -41,3 +41,11 @@ def test_model_beats_mean() -> None:
     model_mae = mean_absolute_error(test[LABEL_COLUMN], prediction)
     mean_mae = mean_absolute_error(test[LABEL_COLUMN], mean)
     assert model_mae < mean_mae
+
+
+def test_refit_uses_given_trees() -> None:
+    labelled = make_features(500, seed=1)
+
+    model = refit_model(labelled, trees=30)
+
+    assert model.booster_.num_trees() == 30
