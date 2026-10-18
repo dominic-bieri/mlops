@@ -18,5 +18,5 @@ I saw this with my own runs too.
 ## Consequences
 
 - No data from the forecast period is used
-- A late run does no harm. If FRED is late or a run is skipped, the day has no features yet. The next run fetches everything since the last date in `vix` and `sp500` (with 7 days overlap), so the gap is filled
-- Until MS3 I check whether the runs start on time. If they are skipped often, an external scheduler like [cron-job.org](https://cron-job.org) starts the workflow through the GitHub API (`workflow_dispatch`)
+- A late or skipped run does no harm, the next run fills the gap (ADR 2)
+- If runs are skipped often, an external scheduler like [cron-job.org](https://cron-job.org) starts the workflow (`workflow_dispatch`)

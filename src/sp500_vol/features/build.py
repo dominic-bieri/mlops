@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from sp500_vol.common.bigquery import BigQueryClient
-from sp500_vol.common.config import get_git_commit
+from sp500_vol.common.config import get_git_commit, is_github_actions
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +80,6 @@ def build_features(sp500: pd.DataFrame, vix: pd.DataFrame) -> pd.DataFrame:
     return df[columns].reset_index(drop=True)
 
 
-# one version per run, e.g. features_20261017_141703 (ADR 10)
 def get_snapshot_name(built_at: datetime) -> str:
     return "features_" + built_at.strftime("%Y%m%d_%H%M%S")
 
@@ -94,6 +93,9 @@ def main() -> None:
 
     bq.replace_all(features, "features")
     logger.info("features: %d rows", len(features))
+
+    if not is_github_actions():
+        return
 
     snapshot = get_snapshot_name(datetime.now(UTC))
     bq.create_snapshot("features", snapshot, f"commit {get_git_commit()}")
