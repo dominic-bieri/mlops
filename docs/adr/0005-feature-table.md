@@ -10,7 +10,6 @@ The label of a day is only known 5 trading days later.
 - Compute features in Python (pandas)
 - Rebuild the whole `features` table on each run (`WRITE_TRUNCATE_DATA`, keeps schema)
 - A snapshot of each version is kept (ADR 10)
-- Volatility in percent per year, like the VIX
 - Label in the same table, empty for the last 5 days
 - Feature store: the BigQuery `features` table, used by training and inference
 - No extra feature store service (e.g. Agent Platform Feature Store): offline only, it would just register the same table
@@ -22,4 +21,3 @@ The label of a day is only known 5 trading days later.
 - A changed formula applies to the whole history, no migration needed
 - Prices are fetched from the APIs only once, then read from the raw tables (ADR 2)
 - Days without VIX value are dropped, `vix_change_5d` then spans 6 trading days (rare)
-- Past days get the same values on each rebuild, as long as the code doesn't change
