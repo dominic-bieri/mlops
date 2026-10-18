@@ -87,6 +87,11 @@ done
 | `FRED_API_KEY` | secret | your FRED key |
 | `TIINGO_API_KEY` | secret | your Tiingo key |
 
+## Cost limit
+
+Optional, not needed to run the repo.
+Stops billing above 5 CHF per month: [`kill-switch/`](../kill-switch/README.md).
+
 ## Notes
 
 - GitHub environments: *Settings -> Environments*, deployment branches `main` only
