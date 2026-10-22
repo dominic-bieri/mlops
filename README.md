@@ -50,7 +50,7 @@ uv run python -m sp500_vol.evaluation.baselines  # baseline errors per year
 uv run pytest
 ```
 
-Runs daily in [GitHub Actions](.github/workflows/feature-pipeline.yml).
+Runs every morning after a US trading day in [GitHub Actions](.github/workflows/feature-pipeline.yml), started by [cron-job.org](https://cron-job.org) (ADR 8).
 
 ## Docker
 
