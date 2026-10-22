@@ -16,13 +16,13 @@
 
 = What I achieved in this milestone
 
-- *Works now:* Every morning after a US trading day (Tue–Sat, 10:17 New York time), GitHub Actions loads SPY prices from Tiingo and the VIX from FRED into BigQuery and builds the feature table with the label.
+- *Works now:* Every morning after a US trading day (Tue–Sat, 10:00 New York time), GitHub Actions loads SPY prices from Tiingo and the VIX from FRED into BigQuery and builds the feature table with the label.
 - *Works now:* Terraform creates the BigQuery tables. CI runs ruff, pytest and the Terraform checks on every pull request.
 - *Decision:* The volatility uses open, high, low and close, not only the close. With 5 daily returns the label was too noisy.
 - *Decision:* `sp500` and `vix` hold the raw data. Rows are only added, so a run only fetches the last few days. `features` is rebuilt on every run, because it is small and the labels of the last 5 days are filled in later. Each version is kept as a read-only BigQuery snapshot with the Git commit that built it, so a model can be traced to its data (ADR 10).
 - *Decision:* The model has to beat HAR-RV, the scaled VIX is only reported. On the last 12 months (until 2026-10-08), HAR-RV (MAE 3.42) and the scaled VIX (3.46) are already better than the 20-day baseline (3.78).
 - *What it cost:* Most time went into the deployment. GitHub Actions logs in to Google Cloud without a stored key (Workload Identity Federation), and each workflow only gets the roles it needs.
-- *Risk:* GitHub Actions often starts scheduled runs late or skips them (#link("https://github.com/orgs/community/discussions/147369")[community discussion]). The next run fills the gap. If runs are skipped often, an external scheduler starts the workflow (ADR 8).
+- *Risk:* GitHub Actions started scheduled runs 3–5 hours late or skipped them (#link("https://github.com/orgs/community/discussions/207346")[community discussion]). Now cron-job.org starts the workflow on time (ADR 8). A skipped run does no harm, the next run fills the gap.
 - *Not done yet:* Training, inference and the model column in the yearly table (A1, B1) come in MS3.
 - *Look at first:* #file("src/sp500_vol/features/build.py"), #file("tests/test_replay.py"), #file("src/sp500_vol/evaluation/baselines.py").
 
@@ -40,7 +40,7 @@ More details are in the ADRs in #link(repo + "/tree/main/docs/adr")[`docs/adr`].
   The VIX is higher than the realized volatility because of the risk premium. I scale it by 0.80, the average label divided by the average VIX on the training data (ADR 7). \
   Files: #file("docs/adr/0007-baselines.md"), #file("src/sp500_vol/evaluation/baselines.py")
 - *B3: Forecast issue time and label maturity* - Changed \
-  The forecast for a trading day is made the next morning at 10:17 New York time, because FRED usually publishes the VIX shortly after 9:30. The market is already open by then, but the forecast only uses data up to the previous close. Each raw row stores when it was first loaded (`loaded_at`). Training only uses rows where all 5 future days are known. \
+  The forecast for a trading day is made the next morning at 10:00 New York time, because FRED usually publishes the VIX shortly after 9:30. The market is already open by then, but the forecast only uses data up to the previous close. Each raw row stores when it was first loaded (`loaded_at`). Training only uses rows where all 5 future days are known. \
   Files: #file("docs/adr/0008-issue-time-and-label-maturity.md"), #file("src/sp500_vol/features/ingest.py"), #file("src/sp500_vol/evaluation/baselines.py")
 - *B4: Training, promotion and retraining cadence* - Changed \
   LightGBM with L1 loss, because success is measured with MAE. Retraining once a month on a rolling split (test: last 12 months), because fixed dates don't fit monthly retraining. Parameters are chosen on val. A new model is only registered if it beats HAR-RV on test. Details follow in MS3. \
