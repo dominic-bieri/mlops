@@ -38,7 +38,7 @@ class BigQueryClient:
         # keeps schema from Terraform
         self.load(df, table, "WRITE_TRUNCATE_DATA")
 
-    # read-only copy, stores only the changes to the table (ADR 10)
+    # read-only copy (ADR 10)
     def create_snapshot(self, table: str, snapshot: str, description: str) -> None:
         table_id = self.get_table_id(table)
         snapshot_id = self.get_table_id(snapshot)
