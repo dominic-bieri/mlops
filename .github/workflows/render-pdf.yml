@@ -8,6 +8,10 @@ on:
       - "docs/**/*.typ"
       - "docs/media/**"
 
+concurrency:
+  group: render-pdf
+  cancel-in-progress: true
+
 jobs:
   render:
     runs-on: ubuntu-latest
@@ -41,10 +45,13 @@ jobs:
           git add docs/*.pdf
           git diff --staged --quiet && exit 0
 
-          branch="render-pdf/auto-${{ github.run_id }}"
+          branch="render-pdf/auto"
           git checkout -b "$branch"
           git commit -m ":robot: render PDFs from Typst sources"
-          git push -u origin "$branch"
+          git push --force origin "$branch"
+
+          open_prs=$(gh pr list --head "$branch" --state open --json number --jq length)
+          [ "$open_prs" -gt 0 ] && exit 0
 
           gh pr create \
             --title ":robot: render PDFs from Typst sources" \
