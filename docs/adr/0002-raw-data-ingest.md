@@ -16,10 +16,11 @@ The proposal planned one table and two scripts.
   - Table empty: everything since 1993-01-29 (first SPY trading day)
   - Table filled: only from the latest stored date minus 7 days
 - Only days not yet in the table are added, stored rows are never changed (ADR 8)
+- Fetched rows are checked before writing: no missing values, prices above 0, open and close between low and high, no duplicate dates
 
 ## Consequences
 
-- If one source fails, nothing is written and the next run catches up
+- If one source fails or a check fails, nothing is written and the next run catches up
 - To build features, the two tables have to be joined on `date`
 - No separate script for the past data
 - If the job did not run for some days, the next run fills the gap

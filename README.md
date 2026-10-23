@@ -52,6 +52,14 @@ uv run pytest
 
 Runs every morning after a US trading day in [GitHub Actions](.github/workflows/feature-pipeline.yml), started by [cron-job.org](https://cron-job.org) (ADR 8).
 
+## Backfill
+
+There is no separate backfill script, `ingest` decides on each run what to fetch ([ADR 2](docs/adr/0002-raw-data-ingest.md)):
+
+- Table empty: everything from 1993-01-29 (first SPY trading day) until yesterday, New York time
+- Table filled: from the latest stored date minus 7 days, only missing days are added
+- A skipped run does no harm, the next run fills the gap
+
 ## Docker
 
 No Dockerfile yet. The pipelines run in GitHub Actions with the pinned dependencies from `uv.lock`, an image would add nothing there.
