@@ -57,5 +57,9 @@ More details are in the ADRs in #link(repo + "/tree/main/docs/adr")[`docs/adr`].
 - *B10: Historical replay test* - Changed \
   A test runs the pipeline day by day for normal days, a market shock and a late VIX. It checks that old features don't change, labels only appear after 5 days and `loaded_at` is set. \
   Files: #file("tests/test_replay.py")
-- *B5, B6, B7: OpenAI news stage, agent workflows, LSTM comparison* - Rejected \
-  Not confirmed by the editorial summary and not part of the proposal.
+- *B5: Optional OpenAI news stage* - Rejected \
+  News back to 1993 would need another licensed source. Without it, the feature only exists from the day the poller starts, so the model could not be trained on it for years. It would also add a paid API to the core pipeline.
+- *B6: Agent workflows for coding and documentation* - Rejected \
+  This is about how I develop, not about the ML system. It changes neither the data, the model nor the pipelines.
+- *B7: LSTM comparison* - Rejected \
+  With about 8,400 daily rows and 10 features, an LSTM has little to learn from, and HAR-RV is already a strong linear bar. LightGBM against the baselines stays the planned scope.
