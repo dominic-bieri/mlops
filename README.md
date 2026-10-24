@@ -17,11 +17,11 @@ The forecast is the volatility of SPY as a proxy for the S&P 500. It is not a tr
 
 ## Changes since the proposal
 
-- Volatility uses open, high, low and close instead of only the close, so the label is less noisy ([ADR 6](docs/adr/0006-volatility-definition.md))
-- HAR-RV as a second baseline, VIX corrected by one factor ([ADR 7](docs/adr/0007-baselines.md))
-- Retraining monthly instead of weekly ([ADR 9](docs/adr/0009-training-and-retraining.md))
+- Volatility uses open, high, low and close instead of only the close, so the label is less noisy ([ADR 3](docs/adr/0003-volatility-definition.md))
+- HAR-RV as a second baseline, VIX corrected by one factor ([ADR 4](docs/adr/0004-baselines.md))
+- Retraining monthly instead of weekly ([ADR 6](docs/adr/0006-training-and-retraining.md))
 - Success criterion: lower MAE than HAR-RV, instead of 10 % better than the 20-day volatility. The scaled VIX is only reported
-- Each `features` version is kept as a BigQuery snapshot with its Git commit ([ADR 10](docs/adr/0010-feature-versioning.md))
+- Each `features` version is kept as a BigQuery snapshot with its Git commit ([ADR 2](docs/adr/0002-feature-store.md))
 - Terraform for all BigQuery tables, applied by GitHub Actions when a merge to `main` changes `terraform/`
 
 ## Requirements
@@ -50,11 +50,11 @@ uv run python -m sp500_vol.evaluation.baselines  # baseline errors per year
 uv run pytest
 ```
 
-Runs every morning after a US trading day in [GitHub Actions](.github/workflows/feature-pipeline.yml), started by [cron-job.org](https://cron-job.org) (ADR 8).
+Runs every morning after a US trading day in [GitHub Actions](.github/workflows/feature-pipeline.yml), started by [cron-job.org](https://cron-job.org) (ADR 5).
 
 ## Backfill
 
-There is no separate backfill script, `ingest` decides on each run what to fetch ([ADR 2](docs/adr/0002-raw-data-ingest.md)):
+There is no separate backfill script, `ingest` decides on each run what to fetch ([ADR 1](docs/adr/0001-raw-data.md)):
 
 - Table empty: everything from 1993-01-29 (first SPY trading day) until yesterday, New York time
 - Table filled: from the latest stored date minus 7 days, only missing days are added

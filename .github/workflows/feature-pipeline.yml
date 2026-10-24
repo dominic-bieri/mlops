@@ -1,7 +1,7 @@
 name: Feature pipeline
 
 on:
-  # started by cron-job.org Tue–Sat 10:00 New York time, GitHub's schedule runs hours late (ADR 8)
+  # started by cron-job.org Tue–Sat 10:00 New York time, GitHub's schedule runs hours late (ADR 5)
   workflow_dispatch:
 
 permissions:

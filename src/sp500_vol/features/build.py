@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from sp500_vol.common.bigquery import BigQueryClient
-from sp500_vol.common.config import get_git_commit, is_github_actions
+from sp500_vol.common.config import get_git_commit, is_github_actions, setup_logging
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ FEATURE_COLUMNS = [
 LABEL_COLUMN = "rv_next_5d"
 
 
-# Garman-Klass-Yang-Zhang, formula in ADR 6
+# Garman-Klass-Yang-Zhang, formula in ADR 3
 def daily_variance(df: pd.DataFrame) -> pd.Series:
     previous_close = df["close"].shift(1)
     overnight = np.log((df["open"] + df["div_cash"]) / previous_close)
@@ -47,7 +47,7 @@ def realized_vol(daily_var: pd.Series, window: int) -> pd.Series:
 def build_spy_features(sp500: pd.DataFrame) -> pd.DataFrame:
     df = sp500.sort_values("date").reset_index(drop=True)
 
-    # dividend added back (ADR 3)
+    # dividend added back (ADR 1)
     previous_close = df["close"].shift(1)
     df["log_return"] = np.log((df["close"] + df["div_cash"]) / previous_close)
     df["abs_log_return"] = df["log_return"].abs()
@@ -103,5 +103,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    setup_logging()
     main()

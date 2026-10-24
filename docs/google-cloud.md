@@ -2,8 +2,11 @@
 
 One-time setup by hand. Everything else is in [Terraform](../terraform/README.md).
 
-GitHub Actions log in via Workload Identity Federation, no key ([ADR 4](adr/0004-github-actions-gcp-auth.md)).
-One GitHub environment per workflow, each with only its own roles.
+GitHub Actions log in via Workload Identity Federation: no key and no service account, so nothing can leak.
+
+- Google only accepts tokens from this repo (by ID), on `main`, from `push`, `schedule` or `workflow_dispatch`
+- One GitHub environment per workflow, each with only its own roles
+- No `pull_request_target` workflows, `main` needs branch protection
 
 ## State bucket
 
