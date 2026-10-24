@@ -26,6 +26,10 @@ def is_github_actions() -> bool:
     return os.environ.get("GITHUB_ACTIONS") == "true"
 
 
+def get_gcp_region() -> str:
+    return os.environ["GCP_REGION"]
+
+
 def get_git_commit() -> str:
     return os.environ.get("GITHUB_SHA", "local")
 

@@ -23,8 +23,9 @@
 - *Decision:* The model has to beat HAR-RV, the scaled VIX is only reported. On the last 12 months (until 2026-10-08), HAR-RV (MAE 3.42) and the scaled VIX (3.46) are already better than the 20-day baseline (3.78).
 - *What it cost:* Most time went into the deployment. GitHub Actions logs in to Google Cloud without a stored key (Workload Identity Federation), and each workflow only gets the roles it needs.
 - *Risk:* GitHub Actions started scheduled runs 3–5 hours late or skipped them (#link("https://github.com/orgs/community/discussions/207346")[community discussion]). Now cron-job.org starts the workflow on time (ADR 5). A skipped run does no harm, the next run fills the gap.
-- *Not done yet:* Training, inference and the model column in the yearly table (A1, B1) come in MS3.
-- *Look at first:* #file("src/sp500_vol/features/build.py"), #file("tests/test_replay.py"), #file("src/sp500_vol/evaluation/baselines.py").
+- *Started:* The training pipeline. Once a month, GitHub Actions trains LightGBM on the newest feature snapshot. Each run is tracked in Agent Platform Experiments in Google Cloud. A model is only registered if it beats HAR-RV and the current model (ADR 6).
+- *Not done yet:* Inference and UI come in MS4.
+- *Look at first:* #file("src/sp500_vol/features/build.py"), #file("tests/test_replay.py"), #file("src/sp500_vol/training/train.py").
 
 = Response to MS1 reviews
 
@@ -33,21 +34,21 @@ More details are in the ADRs in #link(repo + "/tree/main/docs/adr")[`docs/adr`].
 - *E1, B2: Define the RV label and address its noise* - Changed \
   Daily variance from open, high, low, close and the overnight jump (Garman-Klass-Yang-Zhang, formulas in ADR 3). The label is the volatility of the next 5 days in percent per year, like the VIX. The 20-day baseline uses the same formula. Of the common estimators it is a good trade-off between accuracy and simplicity (ADR 3). \
   Files: #file("docs/adr/0003-volatility-definition.md"), #file("src/sp500_vol/features/build.py")
-- *A1: Add HAR-RV as a second baseline* - Partly \
-  A linear regression on the volatility of the last 1, 5 and 22 days, fitted on the training data (formula in ADR 4). A script prints the errors per year for the 20-day baseline, HAR-RV and the VIX. \
-  Files: #file("docs/adr/0004-baselines.md"), #file("src/sp500_vol/features/build.py"), #file("src/sp500_vol/evaluation/baselines.py")
+- *A1: Add HAR-RV as a second baseline* - Changed \
+  A linear regression on the volatility of the last 1, 5 and 22 days, fitted on the training data (formula in ADR 4). Each training run logs the errors per year for the model, the 20-day baseline, HAR-RV and the VIX. \
+  Files: #file("docs/adr/0004-baselines.md"), #file("src/sp500_vol/features/build.py"), #file("src/sp500_vol/training/evaluate.py")
 - *A2: Make the VIX comparable* - Changed \
   The VIX is higher than the realized volatility because of the risk premium. I scale it by 0.80, the average label divided by the average VIX on the training data (ADR 4). \
-  Files: #file("docs/adr/0004-baselines.md"), #file("src/sp500_vol/evaluation/baselines.py")
+  Files: #file("docs/adr/0004-baselines.md"), #file("src/sp500_vol/training/evaluate.py")
 - *B3: Forecast issue time and label maturity* - Changed \
   The forecast for a trading day is made the next morning at 10:00 New York time, because FRED usually publishes the VIX shortly after 9:30. The market is already open by then, but the forecast only uses data up to the previous close. Each raw row stores when it was first loaded (`loaded_at`). Training only uses rows where all 5 future days are known. \
-  Files: #file("docs/adr/0005-issue-time-and-label-maturity.md"), #file("src/sp500_vol/features/ingest.py"), #file("src/sp500_vol/evaluation/baselines.py")
+  Files: #file("docs/adr/0005-issue-time-and-label-maturity.md"), #file("src/sp500_vol/features/ingest.py"), #file("src/sp500_vol/training/split.py")
 - *B4: Training, promotion and retraining cadence* - Changed \
-  LightGBM with L1 loss, because success is measured with MAE. Retraining once a month on a rolling split (test: last 12 months), because fixed dates don't fit monthly retraining. Parameters are chosen on val. A new model is only registered if it beats HAR-RV on test. Details follow in MS3. \
-  Files: #file("docs/adr/0006-training-and-retraining.md"), #file("src/sp500_vol/evaluation/baselines.py")
-- *B1: Scope of the output* - Partly \
+  LightGBM with L1 loss, because success is measured with MAE. Retraining once a month on a rolling split (test: last 12 months), because fixed dates don't fit monthly retraining. The number of trees is chosen on val. A new model is only registered if it beats HAR-RV and the current model on test. \
+  Files: #file("docs/adr/0006-training-and-retraining.md"), #file("src/sp500_vol/training/split.py"), #file("src/sp500_vol/training/train.py")
+- *B1: Scope of the output* - Changed \
   The README says the forecast is SPY volatility as a proxy for the S&P 500, not a trading signal. The A1 table also splits calm and stressed days (VIX above 20). \
-  Files: #file("README.md"), #file("src/sp500_vol/evaluation/baselines.py")
+  Files: #file("README.md"), #file("src/sp500_vol/training/evaluate.py")
 - *B8: Diagram arrow* - Changed \
   Arrow from the BigQuery feature store to the inference pipeline. \
   Files: #file("docs/media/System_Design.svg")

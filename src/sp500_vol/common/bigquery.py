@@ -49,6 +49,17 @@ class BigQueryClient:
 
         self.client.query(sql).result()
 
+    def get_latest_snapshot(self, prefix: str) -> str:
+        dataset_id = f"{self.project}.{self.dataset}"
+
+        names = []
+        for table in self.client.list_tables(dataset_id):
+            if table.table_type == "SNAPSHOT" and table.table_id.startswith(prefix):
+                names.append(table.table_id)
+        if not names:
+            raise ValueError(f"no snapshot {prefix}*, run the feature pipeline first")
+        return max(names)
+
     def load(self, df: pd.DataFrame, table: str, write_disposition: str) -> None:
         # empty replace would wipe the table
         if df.empty:

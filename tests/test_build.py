@@ -43,7 +43,9 @@ def test_label_is_realized_vol_of_next_five_days() -> None:
 
 
 def test_last_five_days_have_no_label() -> None:
-    df = build_features(*make_data())
+    sp500, vix = make_data()
+
+    df = build_features(sp500, vix)
 
     labels = df[LABEL_COLUMN]
     assert labels.tail(HORIZON).isna().all()

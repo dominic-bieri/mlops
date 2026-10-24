@@ -1,1 +1,2 @@
-project_id = "your-gcp-project-id"
+project_id   = "your-gcp-project-id"
+model_region = "europe-west6"
