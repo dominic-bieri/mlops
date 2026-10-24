@@ -55,7 +55,7 @@ def train_and_evaluate(features: pd.DataFrame, snapshot: str) -> TrainingResult:
     cutoff = get_cutoff(features)
     train, val, test = split(features, cutoff)
 
-    # fitted on train, val only chooses the trees (ADR 7)
+    # fitted on train, val only chooses the trees (ADR 4)
     tuned = fit_model(train, val)
     unseen = pd.concat([val, test])
     errors_by_year = get_errors_by_year(tuned, train, unseen)
@@ -128,7 +128,7 @@ def main() -> None:
     features = bq.read_table(snapshot)
     result = train_and_evaluate(features, snapshot)
 
-    # local code may not be committed (ADR 10)
+    # local code may not be committed (ADR 2)
     if not is_github_actions():
         logger.info("local run, nothing logged or registered")
         return
