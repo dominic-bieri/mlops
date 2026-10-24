@@ -17,6 +17,10 @@ workflows:
         - 'actions/checkout@v7.0.1'
         - 'google-github-actions/auth@v3.0.0'
         - 'hashicorp/setup-terraform@v4.0.1'
+    '.github/workflows/training-pipeline.yml':
+        - 'actions/checkout@v7.0.1'
+        - 'astral-sh/setup-uv@v10.3.0'
+        - 'google-github-actions/auth@v3.0.0'
 dependencies:
     'actions/checkout@v7.0.1':
         ref: 'v7.0.1'

@@ -13,8 +13,8 @@ A model must be traceable to the exact data it was trained on, BigQuery time tra
 - Feature store: the BigQuery `features` table, no extra service (Agent Platform Feature Store would only register the same table)
 - After each build a read-only snapshot, e.g. `features_20261017_141703` (UTC), with the Git commit as description
 - Only GitHub Actions builds a snapshot, local code may not be committed
-- `features` stays the current version, training and inference read it
-- Training (MS3) logs the snapshot name, so it can be trained again on the same data
+- `features` stays the current version for inference
+- Training reads the newest snapshot and logs its name, so it can be trained again on the same data
 - Snapshot instead of Parquet on GCS: no extra bucket or roles, same SQL
 
 ## Consequences

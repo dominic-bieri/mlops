@@ -57,7 +57,7 @@ PRINCIPAL="principalSet://iam.googleapis.com/projects/$PROJECT_NUMBER/locations/
 Needs `PROJECT_ID` and `PRINCIPAL` from above.
 
 ```bash
-for ROLE in roles/serviceusage.serviceUsageAdmin roles/bigquery.admin; do
+for ROLE in roles/serviceusage.serviceUsageAdmin roles/bigquery.admin roles/storage.admin; do
   gcloud projects add-iam-policy-binding $PROJECT_ID \
     --member="$PRINCIPAL/terraform" --role="$ROLE" --condition=None
 done
@@ -69,6 +69,7 @@ gcloud storage buckets add-iam-policy-binding gs://$PROJECT_ID-tfstate \
 | Name | Type | Value |
 |---|---|---|
 | `GCP_PROJECT_ID` | variable | `YOUR_PROJECT_ID` |
+| `GCP_REGION` | variable | `europe-west6` |
 | `GCP_WORKLOAD_IDENTITY_PROVIDER` | variable | `projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/github/providers/github` |
 | `GCP_TFSTATE_BUCKET` | variable | `YOUR_PROJECT_ID-tfstate` |
 
@@ -89,6 +90,26 @@ done
 | `GCP_WORKLOAD_IDENTITY_PROVIDER` | variable | same as `terraform` |
 | `FRED_API_KEY` | secret | your FRED key |
 | `TIINGO_API_KEY` | secret | your Tiingo key |
+
+## Environment `training-pipeline`
+
+Needs `PROJECT_ID` and `PRINCIPAL` from above, and the model bucket from Terraform.
+
+```bash
+for ROLE in roles/bigquery.jobUser roles/bigquery.dataViewer roles/aiplatform.user; do
+  gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member="$PRINCIPAL/training-pipeline" --role="$ROLE" --condition=None
+done
+
+gcloud storage buckets add-iam-policy-binding gs://$PROJECT_ID-models \
+  --member="$PRINCIPAL/training-pipeline" --role="roles/storage.objectAdmin"
+```
+
+| Name | Type | Value |
+|---|---|---|
+| `GCP_PROJECT_ID` | variable | `YOUR_PROJECT_ID` |
+| `GCP_REGION` | variable | same as `terraform` |
+| `GCP_WORKLOAD_IDENTITY_PROVIDER` | variable | same as `terraform` |
 
 ## Cost limit
 
