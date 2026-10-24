@@ -30,10 +30,6 @@ def get_gcp_region() -> str:
     return os.environ["GCP_REGION"]
 
 
-def get_model_bucket() -> str:
-    return f"{get_gcp_project_id()}-models"
-
-
 def get_git_commit() -> str:
     return os.environ.get("GITHUB_SHA", "local")
 
