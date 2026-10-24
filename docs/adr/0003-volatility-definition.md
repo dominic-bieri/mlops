@@ -1,4 +1,4 @@
-# 6. Volatility definition
+# 3. Volatility definition
 
 ## Context
 
@@ -14,7 +14,7 @@ I wanted one that is accurate and still simple.
 
 $$\sigma^2 = \frac{1}{n}\sum_{i=1}^{n}\left[\left(\ln\frac{O_i}{C_{i-1}}\right)^2 + \frac{1}{2}\left(\ln\frac{H_i}{L_i}\right)^2 - (2\ln 2 - 1)\left(\ln\frac{C_i}{O_i}\right)^2\right]$$
 
-- $O_i, H_i, L_i, C_i$: open, high, low, close of day $i$. On dividend days the dividend is added to $O_i$ (ADR 3)
+- $O_i, H_i, L_i, C_i$: open, high, low, close of day $i$. On dividend days the dividend is added to $O_i$ (ADR 1)
 - $\ln$ of two prices is about the move in percent ($\ln\frac{101}{100} \approx 1\,\%$). Squared, so up and down count the same
 - Three parts for each day:
   - Jump over night, from yesterday's close to today's open (e.g. news after the close). Added by Yang-Zhang

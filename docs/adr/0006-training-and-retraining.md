@@ -1,4 +1,4 @@
-# 9. Training and retraining
+# 6. Training and retraining
 
 ## Context
 

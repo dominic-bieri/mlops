@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 
 from sp500_vol.common.bigquery import BigQueryClient
+from sp500_vol.common.config import setup_logging
 from sp500_vol.features.fred_client import FredClient
 from sp500_vol.features.tiingo_client import TiingoClient
 from sp500_vol.features.validate import validate_spy, validate_vix
@@ -35,6 +36,14 @@ def only_new(df: pd.DataFrame, existing: set[date], loaded_at: pd.Timestamp) -> 
     return new
 
 
+def append_new(
+    bq: BigQueryClient, df: pd.DataFrame, table: str, existing: set[date], loaded_at: pd.Timestamp
+) -> None:
+    new = only_new(df, existing, loaded_at)
+    bq.append(new, table)
+    logger.info("%s: %d new rows", table, len(new))
+
+
 def main() -> None:
     fred = FredClient()
     tiingo = TiingoClient()
@@ -47,21 +56,16 @@ def main() -> None:
     vix_start = get_start(max(vix_dates, default=None))
     sp500_start = get_start(max(sp500_dates, default=None))
 
-    # fetch both before writing, so a failed source writes nothing (ADR 2)
+    # fetch both before writing, so a failed source writes nothing (ADR 1)
     vix = fred.fetch_vix(vix_start, end)
     sp500 = tiingo.fetch_spy(sp500_start, end)
     validate_vix(vix)
     validate_spy(sp500)
 
-    new_vix = only_new(vix, vix_dates, loaded_at)
-    bq.append(new_vix, "vix")
-    logger.info("vix: %d new rows since %s", len(new_vix), vix_start)
-
-    new_sp500 = only_new(sp500, sp500_dates, loaded_at)
-    bq.append(new_sp500, "sp500")
-    logger.info("sp500: %d new rows since %s", len(new_sp500), sp500_start)
+    append_new(bq, vix, "vix", vix_dates, loaded_at)
+    append_new(bq, sp500, "sp500", sp500_dates, loaded_at)
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    setup_logging()
     main()
