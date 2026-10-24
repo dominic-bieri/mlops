@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from sp500_vol.common.bigquery import BigQueryClient
-from sp500_vol.common.config import get_git_commit, is_github_actions
+from sp500_vol.common.config import get_git_commit, is_github_actions, setup_logging
 
 logger = logging.getLogger(__name__)
 
@@ -103,5 +103,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    setup_logging()
     main()

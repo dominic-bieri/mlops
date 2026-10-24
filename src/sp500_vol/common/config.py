@@ -1,3 +1,4 @@
+import logging
 import os
 
 from dotenv import load_dotenv
@@ -27,3 +28,7 @@ def is_github_actions() -> bool:
 
 def get_git_commit() -> str:
     return os.environ.get("GITHUB_SHA", "local")
+
+
+def setup_logging() -> None:
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
