@@ -61,7 +61,7 @@ def main() -> None:
     print(f"test:  {test['date'].min()} to {test['date'].max()}")
 
     har = LinearRegression().fit(train[HAR_COLUMNS], train[LABEL_COLUMN])
-    # removes the risk premium (ADR 7)
+    # removes the risk premium (ADR 4)
     vix_factor = train[LABEL_COLUMN].mean() / train["vix"].mean()
 
     print(f"vix factor: {vix_factor:.2f}")
