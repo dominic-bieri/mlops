@@ -19,7 +19,7 @@ $$c = \frac{\bar{y}}{\overline{\mathrm{VIX}}} \approx 0.8, \qquad \hat{y}_t = c 
 
 - No time conversion for the VIX, VIX and label are both in percent per year
 - HAR-RV and the factor are fitted on the same data as the model, never on test
-- Success: lower MAE than HAR-RV on test (last 12 months, ADR 9), instead of 10 % better than the 20-day volatility
+- Success: lower MAE than HAR-RV on test (last 12 months, ADR 6), instead of 10 % better than the 20-day volatility
 - The scaled VIX is only reported
 - Table per year with model, 20-day volatility, HAR-RV and scaled VIX, fitted on train only, over val and test
 - Each year split into calm days ($\mathrm{VIX}_t \le 20$) and stressed days ($\mathrm{VIX}_t > 20$)

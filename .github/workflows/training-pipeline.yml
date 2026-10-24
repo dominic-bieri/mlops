@@ -1,7 +1,7 @@
 name: Training pipeline
 
 on:
-  # started by cron-job.org on the 1st, 12:00 New York time (ADR 8, 9)
+  # started by cron-job.org on the 1st, 12:00 New York time (ADR 5, 6)
   workflow_dispatch:
 
 permissions:

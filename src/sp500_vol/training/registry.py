@@ -6,7 +6,7 @@ from sp500_vol.common.config import get_gcp_project_id, get_model_bucket
 
 MODEL_NAME = "sp500-vol"
 CHAMPION = "champion"
-# registry needs an image, inference runs on Cloud Run (ADR 1)
+# registry needs an image, inference runs on Cloud Run
 SERVING_IMAGE = "us-docker.pkg.dev/cloudrun/container/placeholder:latest"
 MODEL_FILE = "model.txt"
 

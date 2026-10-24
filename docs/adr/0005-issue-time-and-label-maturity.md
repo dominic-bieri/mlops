@@ -12,7 +12,7 @@ Runs started with `workflow_dispatch` start within seconds.
 
 - The forecast is made the next morning (Tue–Sat) at 10:00 New York time, after FRED has published the VIX. The market is open by then, but the forecast only uses data up to the previous close
 - The time is set in New York time, so it stays the same in summer and winter
-- Ingest only fetches days up to yesterday in New York time, a row of the running day could be intraday and would never be corrected (ADR 2)
+- Ingest only fetches days up to yesterday in New York time, a row of the running day could be intraday and would never be corrected (ADR 1)
 - [cron-job.org](https://cron-job.org) starts the feature and training workflows with `workflow_dispatch`, no `schedule` in the workflows
 - Fine-grained token for cron-job.org: only this repo, only `Actions: write`, expires after a year
 - `vix` and `sp500` store `loaded_at`, the time a row was loaded for the first time

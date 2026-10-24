@@ -13,7 +13,7 @@ def fit_har(train: pd.DataFrame) -> LinearRegression:
     return LinearRegression().fit(train[HAR_COLUMNS], train[LABEL_COLUMN])
 
 
-# removes the risk premium (ADR 7)
+# removes the risk premium (ADR 4)
 def get_vix_factor(train: pd.DataFrame) -> float:
     return train[LABEL_COLUMN].mean() / train["vix"].mean()
 
