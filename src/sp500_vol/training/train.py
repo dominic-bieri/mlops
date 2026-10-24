@@ -93,10 +93,9 @@ def main() -> None:
         aiplatform.log_metrics(metrics)
 
         best_mae = metrics["har_rv_test_mae"]
-        current = registry.get_current_model()
-        parent = None
+        parent = registry.get_parent()
+        current = registry.get_champion(parent)
         if current is not None:
-            parent = current.resource_name
             current_mae = get_current_mae(registry, current, test)
             if current_mae is None:
                 logger.info("current model not comparable, only HAR-RV counts")
@@ -106,7 +105,8 @@ def main() -> None:
 
         model_version = "none"
         if metrics["test_mae"] < best_mae:
-            model_version = registry.register(model, run_name, parent)
+            description = f"run {run_name}, commit {params['git_commit']}, snapshot {snapshot}"
+            model_version = registry.register(model, run_name, parent, description)
         aiplatform.log_params({"model_version": model_version})
 
     logger.info("test mae: model %.2f, to beat %.2f", metrics["test_mae"], best_mae)
