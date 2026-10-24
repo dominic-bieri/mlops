@@ -1,6 +1,8 @@
 locals {
   services = [
     "bigquery.googleapis.com",
+    "aiplatform.googleapis.com",
+    "storage.googleapis.com",
   ]
 }
 

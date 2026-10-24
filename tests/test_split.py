@@ -2,8 +2,8 @@ from datetime import date
 
 import pandas as pd
 
-from sp500_vol.evaluation.baselines import get_cutoff, split
 from sp500_vol.features.build import HORIZON, LABEL_COLUMN
+from sp500_vol.training.split import get_cutoff, split
 
 
 def make_features(start: str, end: str) -> pd.DataFrame:

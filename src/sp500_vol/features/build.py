@@ -27,6 +27,7 @@ FEATURE_COLUMNS = [
     "vix_change_5d",
 ]
 LABEL_COLUMN = "rv_next_5d"
+SNAPSHOT_PREFIX = "features_"
 
 
 # Garman-Klass-Yang-Zhang, formula in ADR 3
@@ -81,7 +82,7 @@ def build_features(sp500: pd.DataFrame, vix: pd.DataFrame) -> pd.DataFrame:
 
 
 def get_snapshot_name(built_at: datetime) -> str:
-    return "features_" + built_at.strftime("%Y%m%d_%H%M%S")
+    return SNAPSHOT_PREFIX + built_at.strftime("%Y%m%d_%H%M%S")
 
 
 def main() -> None:
