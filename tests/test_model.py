@@ -5,6 +5,7 @@ from sklearn.metrics import mean_absolute_error
 
 from sp500_vol.features.build import FEATURE_COLUMNS, LABEL_COLUMN
 from sp500_vol.training.model import fit_model, refit_model
+from sp500_vol.training.train import train_and_evaluate
 
 
 def make_features(rows: int, seed: int) -> pd.DataFrame:
@@ -58,3 +59,13 @@ def test_saved_model_keeps_feature_names() -> None:
     booster = lgb.Booster(model_str=model.booster_.model_to_string())
 
     assert booster.feature_name() == FEATURE_COLUMNS
+
+
+def test_train_and_evaluate_beats_20_day_baseline() -> None:
+    features = make_features(2000, seed=1)
+    features["date"] = pd.bdate_range("2018-01-01", periods=2000).date
+
+    result = train_and_evaluate(features, "features_test")
+
+    assert result.model.booster_.num_trees() == result.params["trees"]
+    assert result.metrics["test_mae"] < result.metrics["rv_20d_test_mae"]

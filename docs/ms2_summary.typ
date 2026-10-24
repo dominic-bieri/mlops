@@ -35,10 +35,10 @@ More details are in the ADRs in #link(repo + "/tree/main/docs/adr")[`docs/adr`].
   Files: #file("docs/adr/0003-volatility-definition.md"), #file("src/sp500_vol/features/build.py")
 - *A1: Add HAR-RV as a second baseline* - Partly \
   A linear regression on the volatility of the last 1, 5 and 22 days, fitted on the training data (formula in ADR 7). A script prints the errors per year for the 20-day baseline, HAR-RV and the VIX. \
-  Files: #file("docs/adr/0007-baselines.md"), #file("src/sp500_vol/features/build.py"), #file("src/sp500_vol/training/baselines.py")
+  Files: #file("docs/adr/0007-baselines.md"), #file("src/sp500_vol/features/build.py"), #file("src/sp500_vol/training/evaluate.py")
 - *A2: Make the VIX comparable* - Changed \
   The VIX is higher than the realized volatility because of the risk premium. I scale it by 0.80, the average label divided by the average VIX on the training data (ADR 7). \
-  Files: #file("docs/adr/0007-baselines.md"), #file("src/sp500_vol/training/baselines.py")
+  Files: #file("docs/adr/0007-baselines.md"), #file("src/sp500_vol/training/evaluate.py")
 - *B3: Forecast issue time and label maturity* - Changed \
   The forecast for a trading day is made the next morning at 10:00 New York time, because FRED usually publishes the VIX shortly after 9:30. The market is already open by then, but the forecast only uses data up to the previous close. Each raw row stores when it was first loaded (`loaded_at`). Training only uses rows where all 5 future days are known. \
   Files: #file("docs/adr/0008-issue-time-and-label-maturity.md"), #file("src/sp500_vol/features/ingest.py"), #file("src/sp500_vol/training/split.py")
@@ -47,7 +47,7 @@ More details are in the ADRs in #link(repo + "/tree/main/docs/adr")[`docs/adr`].
   Files: #file("docs/adr/0009-training-and-retraining.md"), #file("src/sp500_vol/training/split.py")
 - *B1: Scope of the output* - Partly \
   The README says the forecast is SPY volatility as a proxy for the S&P 500, not a trading signal. The A1 table also splits calm and stressed days (VIX above 20). \
-  Files: #file("README.md"), #file("src/sp500_vol/training/baselines.py")
+  Files: #file("README.md"), #file("src/sp500_vol/training/evaluate.py")
 - *B8: Diagram arrow* - Changed \
   Arrow from the BigQuery feature store to the inference pipeline. \
   Files: #file("docs/media/System_Design.svg")
