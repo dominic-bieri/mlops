@@ -2,7 +2,7 @@ import lightgbm as lgb
 from google.api_core.exceptions import NotFound
 from google.cloud import aiplatform, storage
 
-from sp500_vol.common.config import get_gcp_project_id, get_model_bucket
+from sp500_vol.common.config import get_gcp_project_id
 
 MODEL_NAME = "sp500-vol"
 CHAMPION = "champion"
@@ -13,8 +13,10 @@ MODEL_FILE = "model.txt"
 
 class ModelRegistry:
     def __init__(self) -> None:
-        self.client = storage.Client(project=get_gcp_project_id())
-        self.bucket = self.client.bucket(get_model_bucket())
+        project = get_gcp_project_id()
+        self.client = storage.Client(project=project)
+        # created by Terraform (storage.tf)
+        self.bucket = self.client.bucket(f"{project}-models")
 
     def get_parent(self) -> str | None:
         models = aiplatform.Model.list(filter=f'display_name="{MODEL_NAME}"')
@@ -30,10 +32,8 @@ class ModelRegistry:
         except NotFound:
             return None
 
-    def load_model(self, registered: aiplatform.Model) -> lgb.Booster | None:
+    def load_model(self, registered: aiplatform.Model) -> lgb.Booster:
         blob = storage.Blob.from_uri(f"{registered.uri}/{MODEL_FILE}", client=self.client)
-        if not blob.exists():
-            return None
         return lgb.Booster(model_str=blob.download_as_text())
 
     def register(

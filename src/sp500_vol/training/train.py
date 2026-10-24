@@ -35,15 +35,15 @@ class TrainingResult:
 
 
 def get_current_mae(
-    registry: ModelRegistry, current: aiplatform.Model, test: pd.DataFrame
+    registry: ModelRegistry, current: aiplatform.Model | None, test: pd.DataFrame
 ) -> float | None:
+    if current is None:
+        return None
     age = datetime.now(UTC) - current.version_create_time
     if age > MAX_MODEL_AGE:
         return None
 
     booster = registry.load_model(current)
-    if booster is None:
-        return None
     if booster.feature_name() != FEATURE_COLUMNS:
         return None
 
@@ -100,13 +100,12 @@ def track_and_register(result: TrainingResult) -> None:
         best_mae = result.metrics["har_rv_test_mae"]
         parent = registry.get_parent()
         current = registry.get_champion(parent)
-        if current is not None:
-            current_mae = get_current_mae(registry, current, result.test)
-            if current_mae is None:
-                logger.info("current model not comparable, only HAR-RV counts")
-            else:
-                aiplatform.log_metrics({"current_test_mae": current_mae})
-                best_mae = min(best_mae, current_mae)
+        current_mae = get_current_mae(registry, current, result.test)
+        if current_mae is None:
+            logger.info("no comparable current model, only HAR-RV counts")
+        else:
+            aiplatform.log_metrics({"current_test_mae": current_mae})
+            best_mae = min(best_mae, current_mae)
 
         test_mae = result.metrics["test_mae"]
         model_version = "none"
