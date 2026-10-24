@@ -50,7 +50,7 @@ uv run python -m sp500_vol.training.train        # train and show errors, regist
 uv run pytest
 ```
 
-Runs in GitHub Actions: [features](.github/workflows/feature-pipeline.yml) every morning after a US trading day, started by [cron-job.org](https://cron-job.org) (ADR 8), [training](.github/workflows/training-pipeline.yml) monthly.
+Runs in GitHub Actions: [features](.github/workflows/feature-pipeline.yml) every morning after a US trading day, [training](.github/workflows/training-pipeline.yml) monthly, both started by [cron-job.org](https://cron-job.org) (ADR 8).
 
 ## Backfill
 

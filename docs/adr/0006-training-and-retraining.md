@@ -9,12 +9,15 @@ Fixed dates (train until 2020, test from 2024) don't work with monthly retrainin
 
 - LightGBM with L1 loss, because success is measured with MAE
 - Retraining once a month on the newest `features` snapshot (ADR 10), a week only adds 5 rows
+- cron-job.org starts it on the 1st at 12:00 New York time, after the feature pipeline, like ADR 8
 - Rolling split: test is the last 12 months, val the 24 months before, train everything before, 5 trading days gap between them
 - Number of trees chosen on val, the other parameters are fixed, then trained again on train and val
-- Registered only if the test MAE is lower than HAR-RV and the current model
+- Registered only if the test MAE is lower than HAR-RV and the current model (alias `champion`)
 - The current model only counts if it is younger than 6 months, so an old model can't block new ones forever
 - Saved as LightGBM text file, so it loads with any LightGBM version
 - Each run in Agent Platform Experiments, each registered model a new version of `sp500-vol` in the Model Registry
+- A new version gets the alias `champion`, the old version loses it
+- The version description names run, Git commit and snapshot, so a model leads back to its code and data
 - Only GitHub Actions logs runs and registers models, local code may not be committed (ADR 10)
 
 ## Consequences
@@ -24,4 +27,4 @@ Fixed dates (train until 2020, test from 2024) don't work with monthly retrainin
 - The current model was trained until its own test start, so it has not seen the new test window and the comparison is fair
 - The newest 12 months are not in the model
 - If the features change or the current model is too old, only HAR-RV counts
-- The newest registered version is the default, inference loads it (MS4)
+- Inference loads `sp500-vol@champion` (MS4), a rollback moves the alias back to an older version

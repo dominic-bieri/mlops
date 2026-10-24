@@ -1,10 +1,7 @@
 name: Training pipeline
 
 on:
-  # monthly (ADR 9), after the feature pipeline
-  schedule:
-    - cron: "37 12 1 * *"
-      timezone: "America/New_York"
+  # started by cron-job.org on the 1st, 12:00 New York time (ADR 8, 9)
   workflow_dispatch:
 
 permissions:
