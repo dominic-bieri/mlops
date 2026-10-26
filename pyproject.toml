@@ -6,19 +6,19 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "requests==2.34.2",
-    "pandas==3.0.6",
+    "pandas==3.1.0",
     "python-dotenv==1.2.4",
     "google-cloud-bigquery[pandas]==3.46.2",
     "numpy==2.5.4",
     "scikit-learn==1.9.1",
     "lightgbm==4.7.0",
-    "google-cloud-aiplatform==2.5.0",
+    "google-cloud-aiplatform==2.6.0",
     "google-cloud-storage==3.17.1",
 ]
 
 [dependency-groups]
 dev = [
-    "ruff==0.17.1",
+    "ruff==0.17.2",
     "pytest==9.1.1",
 ]
 
