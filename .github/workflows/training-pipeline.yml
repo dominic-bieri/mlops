@@ -28,7 +28,7 @@ jobs:
           persist-credentials: false
 
       # before auth, so the credentials file doesn't exist yet
-      - uses: astral-sh/setup-uv@v10.3.0
+      - uses: astral-sh/setup-uv@v10.3.2
 
       - name: Install dependencies
         run: uv sync --locked --no-dev
