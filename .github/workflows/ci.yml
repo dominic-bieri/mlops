@@ -33,6 +33,34 @@ jobs:
       - name: Test
         run: uv run pytest
 
+  docker:
+    if: github.event_name == 'push'
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: ghcr.io/${{ github.repository_owner }}/sp500-vol
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Log in to GHCR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: echo "$GH_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Build and push
+        run: |
+          for target in features training; do
+            docker build --target "$target" -t "$IMAGE-$target:$GITHUB_SHA" \
+              --label "org.opencontainers.image.source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" .
+            docker push "$IMAGE-$target:$GITHUB_SHA"
+          done
+
   # every uses: must match .github/workflows/actions.lock
   actions-lock:
     runs-on: ubuntu-latest
