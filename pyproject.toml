@@ -11,14 +11,14 @@ dependencies = [
     "numpy==2.5.4",
     "scikit-learn==1.9.1",
     "lightgbm==4.7.0",
-    "google-cloud-aiplatform==2.6.0",
+    "google-cloud-aiplatform==2.7.0",
     "google-cloud-storage==3.17.1",
 ]
 
 [dependency-groups]
 dev = [
-    "ruff==0.17.2",
-    "pytest==9.1.1",
+    "ruff==0.17.3",
+    "pytest==9.2.0",
 ]
 
 [build-system]
