@@ -8,7 +8,6 @@ workflows:
         - 'astral-sh/setup-uv@v10.3.2'
     '.github/workflows/feature-pipeline.yml':
         - 'actions/checkout@v7.0.1'
-        - 'astral-sh/setup-uv@v10.3.2'
         - 'google-github-actions/auth@v3.0.0'
     '.github/workflows/render-pdf.yml':
         - 'actions/checkout@v7.0.1'
@@ -19,7 +18,6 @@ workflows:
         - 'hashicorp/setup-terraform@v4.0.1'
     '.github/workflows/training-pipeline.yml':
         - 'actions/checkout@v7.0.1'
-        - 'astral-sh/setup-uv@v10.3.2'
         - 'google-github-actions/auth@v3.0.0'
 dependencies:
     'actions/checkout@v7.0.1':

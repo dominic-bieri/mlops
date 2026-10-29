@@ -2,7 +2,6 @@
 name = "sp500-vol"
 version = "0.1.0"
 description = "S&P 500 realized volatility forecast, MLOps HS26"
-readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "requests==2.34.2",

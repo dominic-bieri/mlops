@@ -30,6 +30,7 @@ The forecast is the volatility of SPY as a proxy for the S&P 500. It is not a tr
 - [uv](https://docs.astral.sh/uv/)
 - [gcloud CLI](https://cloud.google.com/sdk/docs/install)
 - [Terraform](https://developer.hashicorp.com/terraform/install)
+- [Docker](https://docs.docker.com/get-docker/) (optional, for the image)
 
 ## Setup
 
@@ -46,6 +47,7 @@ Google Cloud: [`docs/google-cloud.md`](docs/google-cloud.md), then [`terraform/R
 ```bash
 uv run python -m sp500_vol.features.ingest       # load VIX and SPY
 uv run python -m sp500_vol.features.build        # rebuild features
+uv run python -m sp500_vol.features.pipeline     # both, as in the image
 uv run python -m sp500_vol.training.train        # train and show errors, registers only in GitHub Actions
 uv run pytest
 ```
@@ -62,5 +64,14 @@ There is no separate backfill script, `ingest` decides on each run what to fetch
 
 ## Docker
 
-No Dockerfile yet. The pipelines run in GitHub Actions with the pinned dependencies from `uv.lock`, an image would add nothing there.
-The Dockerfile comes with the inference pipeline and UI on Cloud Run (MS4).
+One `Dockerfile` with two targets, `features` (default) and `training`. [CI](.github/workflows/ci.yml) pushes both to GHCR on every commit to `main`, the pipelines pull the image of their commit.
+
+```bash
+docker build --target features -t sp500-vol-features .
+docker run --rm --env-file .env \
+  -v ~/.config/gcloud/application_default_credentials.json:/creds/adc.json:ro \
+  -e GOOGLE_APPLICATION_CREDENTIALS=/creds/adc.json \
+  sp500-vol-features
+```
+
+Training the same with `--target training`. `.env` and the credentials are only passed at run time, never copied into the image.
