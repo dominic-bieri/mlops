@@ -1,0 +1,11 @@
+.env
+.venv/
+.git/
+.idea/
+**/__pycache__/
+.pytest_cache/
+.ruff_cache/
+docs/
+terraform/
+kill-switch/
+gha-creds-*.json
