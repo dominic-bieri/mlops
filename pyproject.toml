@@ -7,7 +7,7 @@ dependencies = [
     "requests==2.34.2",
     "pandas==3.1.0",
     "python-dotenv==1.2.4",
-    "google-cloud-bigquery[pandas]==3.46.2",
+    "google-cloud-bigquery[pandas]==3.47.0",
     "numpy==2.5.4",
     "scikit-learn==1.9.1",
     "lightgbm==4.7.0",
