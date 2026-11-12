@@ -108,7 +108,10 @@ def main() -> None:
     snapshot = get_snapshot_name(datetime.now(UTC))
     bq.create_snapshot("features", snapshot, f"commit {get_git_commit()}")
     newest = features["date"].max()
-    github_notice("Features", f"snapshot {snapshot}, {len(features)} rows, newest {newest}")
+    github_notice(
+        "Features: new snapshot",
+        [f"Snapshot: {snapshot}", f"Rows: {len(features)}", f"Newest day: {newest}"],
+    )
 
 
 if __name__ == "__main__":
