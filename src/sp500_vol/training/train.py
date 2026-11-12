@@ -13,6 +13,7 @@ from sp500_vol.common.config import (
     get_gcp_region,
     get_git_commit,
     get_image,
+    github_notice,
     is_github_actions,
     setup_logging,
 )
@@ -153,13 +154,10 @@ def track_and_register(result: TrainingResult) -> None:
 
     current_text = "none" if current_mae is None else f"{current_mae:.4f}"
     registered = "not registered" if model_version is None else f"version {model_version}"
-    logger.info(
-        "run %s, %s, test MAE %.4f, HAR-RV %.4f, current %s",
-        run_name,
-        registered,
-        test_mae,
-        har_mae,
-        current_text,
+    github_notice(
+        "Training",
+        f"run {run_name}, {registered}, test MAE {test_mae:.4f}, "
+        f"HAR-RV {har_mae:.4f}, current {current_text}",
     )
 
 

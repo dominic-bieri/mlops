@@ -38,5 +38,10 @@ def get_image() -> str:
     return os.environ.get("IMAGE", "local")
 
 
+# shown on the run page, readable without a GitHub login
+def github_notice(title: str, message: str) -> None:
+    print(f"::notice title={title}::{message}")
+
+
 def setup_logging() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
