@@ -30,8 +30,13 @@ class FredClient:
         if not response.ok:
             raise RuntimeError(f"FRED request failed with status {response.status_code}")
 
-        data = response.json()
-        return to_vix_frame(data["observations"])
+        try:
+            observations = response.json()["observations"]
+        except ValueError, KeyError, TypeError:
+            observations = None
+        if not isinstance(observations, list):
+            raise RuntimeError("FRED returned no observations")
+        return to_vix_frame(observations)
 
 
 def to_vix_frame(observations: list[dict[str, str]]) -> pd.DataFrame:

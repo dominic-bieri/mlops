@@ -101,8 +101,10 @@ for ROLE in roles/bigquery.jobUser roles/bigquery.dataViewer roles/aiplatform.us
     --member="$PRINCIPAL/training-pipeline" --role="$ROLE" --condition=None
 done
 
-gcloud storage buckets add-iam-policy-binding gs://$PROJECT_ID-models \
-  --member="$PRINCIPAL/training-pipeline" --role="roles/storage.objectAdmin"
+for ROLE in roles/storage.objectCreator roles/storage.objectViewer; do
+  gcloud storage buckets add-iam-policy-binding gs://$PROJECT_ID-models \
+    --member="$PRINCIPAL/training-pipeline" --role="$ROLE"
+done
 ```
 
 | Name | Type | Value |
