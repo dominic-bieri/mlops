@@ -1,10 +1,16 @@
-from datetime import date
+from datetime import date, timedelta
 
 import pandas as pd
 import pytest
-from fake_data import make_data
+from fake_data import make_data, make_features
 
-from sp500_vol.features.validate import validate_spy, validate_vix
+from sp500_vol.features.validate import (
+    MAX_FEATURE_AGE_DAYS,
+    MIN_FEATURE_ROWS,
+    validate_features,
+    validate_spy,
+    validate_vix,
+)
 
 
 def test_valid_data_passes() -> None:
@@ -47,3 +53,29 @@ def test_bad_vix_value_fails(value: float | None, reason: str) -> None:
 
     with pytest.raises(ValueError, match=reason):
         validate_vix(vix)
+
+
+def fresh_features() -> tuple[pd.DataFrame, date]:
+    features = make_features(MIN_FEATURE_ROWS, seed=1)
+    return features, features["date"].max() + timedelta(days=3)
+
+
+def test_fresh_features_pass() -> None:
+    features, today = fresh_features()
+
+    validate_features(features, today)
+
+
+def test_old_features_fail() -> None:
+    features, _ = fresh_features()
+    today = features["date"].max() + timedelta(days=MAX_FEATURE_AGE_DAYS + 1)
+
+    with pytest.raises(ValueError, match="days old"):
+        validate_features(features, today)
+
+
+def test_too_few_feature_rows_fail() -> None:
+    features, today = fresh_features()
+
+    with pytest.raises(ValueError, match="rows"):
+        validate_features(features.tail(100), today)

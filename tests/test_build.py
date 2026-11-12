@@ -2,6 +2,7 @@ import pandas as pd
 import pytest
 from fake_data import make_data
 
+from sp500_vol.features import build
 from sp500_vol.features.build import (
     FEATURE_COLUMNS,
     HORIZON,
@@ -88,3 +89,25 @@ def test_without_intraday_move_variance_is_squared_return() -> None:
     assert daily_variance(sp500).iloc[1:].to_numpy() == pytest.approx(
         (df["log_return"] ** 2).iloc[1:].to_numpy()
     )
+
+
+class FakeBigQuery:
+    def __init__(self) -> None:
+        self.sp500, self.vix = make_data()
+        self.written_tables = []
+
+    def read_table(self, table: str) -> pd.DataFrame:
+        return self.sp500 if table == "sp500" else self.vix
+
+    def replace_all(self, df: pd.DataFrame, table: str) -> None:
+        self.written_tables.append(table)
+
+
+def test_local_build_writes_nothing(monkeypatch: pytest.MonkeyPatch) -> None:
+    bq = FakeBigQuery()
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    monkeypatch.setattr(build, "BigQueryClient", lambda: bq)
+
+    build.main()
+
+    assert bq.written_tables == []

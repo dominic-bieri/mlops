@@ -1,22 +1,11 @@
 import lightgbm as lgb
 import numpy as np
-import pandas as pd
+from fake_data import make_features
 from sklearn.metrics import mean_absolute_error
 
 from sp500_vol.features.build import FEATURE_COLUMNS, LABEL_COLUMN
 from sp500_vol.training.model import fit_model, refit_model
 from sp500_vol.training.train import train_and_evaluate
-
-
-def make_features(rows: int, seed: int) -> pd.DataFrame:
-    rng = np.random.default_rng(seed)
-    df = pd.DataFrame()
-    for column in FEATURE_COLUMNS:
-        df[column] = rng.uniform(5, 40, rows)
-
-    noise = rng.normal(0, 1, rows)
-    df[LABEL_COLUMN] = 0.9 * df["rv_5d"] + noise
-    return df
 
 
 def test_same_result_on_every_run() -> None:
@@ -62,8 +51,7 @@ def test_saved_model_keeps_feature_names() -> None:
 
 
 def test_train_and_evaluate_beats_20_day_baseline() -> None:
-    features = make_features(2000, seed=1)
-    features["date"] = pd.bdate_range("2018-01-01", periods=2000).date
+    features = make_features(2000, seed=1, start="2018-01-01")
 
     result = train_and_evaluate(features, "features_test")
 
