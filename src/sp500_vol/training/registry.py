@@ -22,6 +22,8 @@ class ModelRegistry:
         models = aiplatform.Model.list(filter=f'display_name="{MODEL_NAME}"')
         if not models:
             return None
+        if len(models) > 1:
+            raise RuntimeError(f"{len(models)} models named {MODEL_NAME}, keep one")
         return models[0].resource_name
 
     def get_champion(self, parent: str | None) -> aiplatform.Model | None:
@@ -36,11 +38,20 @@ class ModelRegistry:
         blob = storage.Blob.from_uri(f"{registered.uri}/{MODEL_FILE}", client=self.client)
         return lgb.Booster(model_str=blob.download_as_text())
 
+    def upload(self, path: str, text: str) -> str:
+        blob = self.bucket.blob(path)
+        blob.upload_from_string(text)
+        return f"gs://{self.bucket.name}/{blob.name}"
+
     def register(
-        self, model: lgb.LGBMRegressor, run_name: str, parent: str | None, description: str
+        self,
+        model: lgb.LGBMRegressor,
+        run_name: str,
+        parent: str | None,
+        description: str,
+        labels: dict[str, str],
     ) -> str:
-        blob = self.bucket.blob(f"{run_name}/{MODEL_FILE}")
-        blob.upload_from_string(model.booster_.model_to_string())
+        self.upload(f"{run_name}/{MODEL_FILE}", model.booster_.model_to_string())
         registered = aiplatform.Model.upload(
             display_name=MODEL_NAME,
             artifact_uri=f"gs://{self.bucket.name}/{run_name}",
@@ -48,5 +59,6 @@ class ModelRegistry:
             parent_model=parent,
             version_aliases=[CHAMPION],
             version_description=description,
+            labels=labels,
         )
         return registered.version_id

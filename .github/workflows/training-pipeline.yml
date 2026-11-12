@@ -44,7 +44,7 @@ jobs:
         run: >-
           docker run --rm
           -e GCP_PROJECT_ID -e GCP_REGION -e BQ_DATASET
-          -e GITHUB_ACTIONS -e GITHUB_SHA
+          -e GITHUB_ACTIONS -e GITHUB_SHA -e IMAGE
           -v "$GOOGLE_APPLICATION_CREDENTIALS:/creds/adc.json:ro"
           -e GOOGLE_APPLICATION_CREDENTIALS=/creds/adc.json
           "$IMAGE"
