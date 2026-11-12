@@ -34,5 +34,9 @@ def get_git_commit() -> str:
     return os.environ.get("GITHUB_SHA", "local")
 
 
+def get_image() -> str:
+    return os.environ.get("IMAGE", "local")
+
+
 def setup_logging() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")

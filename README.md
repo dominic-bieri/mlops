@@ -12,7 +12,7 @@ The forecast is the volatility of SPY as a proxy for the S&P 500. It is not a tr
 ![System design](docs/media/System_Design.svg)
 
 - Feature pipeline: loads SPY and VIX into BigQuery and builds the `features` table with a versioned snapshot, daily ([`src/sp500_vol/features/`](src/sp500_vol/features/))
-- Training pipeline: trains LightGBM on the newest snapshot, registers it in Agent Platform if it beats HAR-RV and the current model, monthly ([`src/sp500_vol/training/`](src/sp500_vol/training/))
+- Training pipeline: trains LightGBM on the newest snapshot, registers it in Agent Platform if it beats HAR-RV and is not worse than the current model, monthly ([`src/sp500_vol/training/`](src/sp500_vol/training/))
 - Inference pipeline and UI: MS4
 
 ## Changes since the proposal
