@@ -1,5 +1,9 @@
 # S&P 500 Realized Volatility Forecast
 
+[![Feature pipeline](https://github.com/dominic-bieri/mlops/actions/workflows/feature-pipeline.yml/badge.svg)](https://github.com/dominic-bieri/mlops/actions/workflows/feature-pipeline.yml)
+[![Training pipeline](https://github.com/dominic-bieri/mlops/actions/workflows/training-pipeline.yml/badge.svg)](https://github.com/dominic-bieri/mlops/actions/workflows/training-pipeline.yml)
+[![CI](https://github.com/dominic-bieri/mlops/actions/workflows/ci.yml/badge.svg)](https://github.com/dominic-bieri/mlops/actions/workflows/ci.yml)
+
 MLOps HS26. Predicts how much the S&P 500 will move over the next 5 trading days, updated after each US trading day.
 The forecast is the volatility of SPY as a proxy for the S&P 500. It is not a trading signal.
 
@@ -14,6 +18,7 @@ The forecast is the volatility of SPY as a proxy for the S&P 500. It is not a tr
 - Feature pipeline: loads SPY and VIX into BigQuery and builds the `features` table with a versioned snapshot, daily ([`src/sp500_vol/features/`](src/sp500_vol/features/))
 - Training pipeline: trains LightGBM on the newest snapshot, registers it in Agent Platform if it beats HAR-RV and is not worse than the current model, monthly ([`src/sp500_vol/training/`](src/sp500_vol/training/))
 - Inference pipeline and UI: MS4
+- Each pipeline run shows its result as a notice on its run page, readable without a GitHub login
 
 ## Changes since the proposal
 
