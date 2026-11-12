@@ -39,8 +39,9 @@ def get_image() -> str:
 
 
 # shown on the run page, readable without a GitHub login
-def github_notice(title: str, message: str) -> None:
-    print(f"::notice title={title}::{message}")
+def github_notice(title: str, lines: list[str]) -> None:
+    # %0A is a line break in the notice
+    print(f"::notice title={title}::{'%0A'.join(lines)}")
 
 
 def setup_logging() -> None:
