@@ -153,12 +153,17 @@ def track_and_register(result: TrainingResult) -> None:
         aiplatform.log_params({"model_version": model_version or "none"})
 
     current_text = "none" if current_mae is None else f"{current_mae:.4f}"
-    registered = "not registered" if model_version is None else f"version {model_version}"
-    github_notice(
-        "Training",
-        f"run {run_name}, {registered}, test MAE {test_mae:.4f}, "
-        f"HAR-RV {har_mae:.4f}, current {current_text}",
-    )
+    details = [
+        f"Test MAE: model {test_mae:.4f}, HAR-RV {har_mae:.4f}, champion {current_text}",
+        f"Run: {run_name}",
+        f"Snapshot: {params['snapshot']}",
+    ]
+    if model_version is None:
+        github_notice("Training: no new model", ["Champion unchanged", *details])
+    else:
+        github_notice(
+            "Training: new model registered", [f"Version {model_version} is champion", *details]
+        )
 
 
 def main() -> None:
