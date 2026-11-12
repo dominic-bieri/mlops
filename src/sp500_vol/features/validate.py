@@ -1,6 +1,10 @@
+from datetime import date
+
 import pandas as pd
 
 PRICE_COLUMNS = ["open", "high", "low", "close"]
+MIN_FEATURE_ROWS = 5000
+MAX_FEATURE_AGE_DAYS = 10
 
 
 def check(df: pd.DataFrame, bad: pd.Series, source: str, reason: str) -> None:
@@ -27,3 +31,13 @@ def validate_vix(df: pd.DataFrame) -> None:
     check(df, df["close"].isna(), "VIX", "missing value")
     check(df, df["close"] <= 0, "VIX", "value not above 0")
     check(df, df["date"].duplicated(), "VIX", "duplicate date")
+
+
+def validate_features(df: pd.DataFrame, today: date) -> None:
+    if len(df) < MIN_FEATURE_ROWS:
+        raise ValueError(f"features: only {len(df)} rows, expected at least {MIN_FEATURE_ROWS}")
+
+    newest = df["date"].max()
+    age = (pd.Timestamp(today) - pd.Timestamp(newest)).days
+    if age > MAX_FEATURE_AGE_DAYS:
+        raise ValueError(f"features: newest row {newest} is {age} days old")
