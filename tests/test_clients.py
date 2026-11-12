@@ -55,3 +55,26 @@ def test_fred_error_does_not_leak_api_key(monkeypatch: pytest.MonkeyPatch) -> No
 
     assert "secret-key" not in str(error.value)
     assert "500" in str(error.value)
+
+
+def test_fred_without_json_fails_clearly(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("FRED_API_KEY", "secret-key")
+    response = requests.Response()
+    response.status_code = 200
+    response._content = b"<html>maintenance</html>"
+    monkeypatch.setattr(requests, "get", lambda *args, **kwargs: response)
+
+    with pytest.raises(RuntimeError, match="no observations"):
+        FredClient().fetch_vix(date(2024, 1, 1), date(2024, 1, 2))
+
+
+@pytest.mark.parametrize("body", [b"null", b"[]", b'{"observations": null}'])
+def test_fred_with_wrong_json_fails_clearly(monkeypatch: pytest.MonkeyPatch, body: bytes) -> None:
+    monkeypatch.setenv("FRED_API_KEY", "secret-key")
+    response = requests.Response()
+    response.status_code = 200
+    response._content = body
+    monkeypatch.setattr(requests, "get", lambda *args, **kwargs: response)
+
+    with pytest.raises(RuntimeError, match="no observations"):
+        FredClient().fetch_vix(date(2024, 1, 1), date(2024, 1, 2))

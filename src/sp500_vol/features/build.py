@@ -6,6 +6,7 @@ import pandas as pd
 
 from sp500_vol.common.bigquery import BigQueryClient
 from sp500_vol.common.config import get_git_commit, is_github_actions, setup_logging
+from sp500_vol.features.validate import validate_features
 
 logger = logging.getLogger(__name__)
 
@@ -91,16 +92,18 @@ def main() -> None:
     sp500 = bq.read_table("sp500")
     vix = bq.read_table("vix")
     features = build_features(sp500, vix)
-
-    bq.replace_all(features, "features")
     logger.info("features: %d rows", len(features))
 
     if not is_github_actions():
+        logger.info("local run, nothing written")
         return
 
+    validate_features(features, datetime.now(UTC).date())
+    bq.replace_all(features, "features")
     snapshot = get_snapshot_name(datetime.now(UTC))
     bq.create_snapshot("features", snapshot, f"commit {get_git_commit()}")
-    logger.info("snapshot: %s", snapshot)
+    newest = features["date"].max()
+    logger.info("snapshot %s, %d rows, newest %s", snapshot, len(features), newest)
 
 
 if __name__ == "__main__":
