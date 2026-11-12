@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 
+from sp500_vol.features.build import FEATURE_COLUMNS, LABEL_COLUMN
+
 DAYS = 100
 
 
@@ -24,3 +26,14 @@ def make_data(shock_day: int | None = None) -> tuple[pd.DataFrame, pd.DataFrame]
     )
     vix = pd.DataFrame({"date": dates, "close": np.linspace(12, 20, DAYS)})
     return sp500, vix
+
+
+def make_features(rows: int, seed: int, start: str = "2000-01-03") -> pd.DataFrame:
+    rng = np.random.default_rng(seed)
+    df = pd.DataFrame({"date": pd.bdate_range(start, periods=rows).date})
+    for column in FEATURE_COLUMNS:
+        df[column] = rng.uniform(5, 40, rows)
+
+    noise = rng.normal(0, 1, rows)
+    df[LABEL_COLUMN] = 0.9 * df["rv_5d"] + noise
+    return df
