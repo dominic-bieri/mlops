@@ -5,7 +5,12 @@ import numpy as np
 import pandas as pd
 
 from sp500_vol.common.bigquery import BigQueryClient
-from sp500_vol.common.config import get_git_commit, is_github_actions, setup_logging
+from sp500_vol.common.config import (
+    get_git_commit,
+    github_notice,
+    is_github_actions,
+    setup_logging,
+)
 from sp500_vol.features.validate import validate_features
 
 logger = logging.getLogger(__name__)
@@ -103,7 +108,7 @@ def main() -> None:
     snapshot = get_snapshot_name(datetime.now(UTC))
     bq.create_snapshot("features", snapshot, f"commit {get_git_commit()}")
     newest = features["date"].max()
-    logger.info("snapshot %s, %d rows, newest %s", snapshot, len(features), newest)
+    github_notice("Features", f"snapshot {snapshot}, {len(features)} rows, newest {newest}")
 
 
 if __name__ == "__main__":
