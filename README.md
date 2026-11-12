@@ -3,6 +3,7 @@
 [![Feature pipeline](https://github.com/dominic-bieri/mlops/actions/workflows/feature-pipeline.yml/badge.svg)](https://github.com/dominic-bieri/mlops/actions/workflows/feature-pipeline.yml)
 [![Training pipeline](https://github.com/dominic-bieri/mlops/actions/workflows/training-pipeline.yml/badge.svg)](https://github.com/dominic-bieri/mlops/actions/workflows/training-pipeline.yml)
 [![CI](https://github.com/dominic-bieri/mlops/actions/workflows/ci.yml/badge.svg)](https://github.com/dominic-bieri/mlops/actions/workflows/ci.yml)
+[![Terraform](https://github.com/dominic-bieri/mlops/actions/workflows/terraform.yml/badge.svg)](https://github.com/dominic-bieri/mlops/actions/workflows/terraform.yml)
 
 MLOps HS26. Predicts how much the S&P 500 will move over the next 5 trading days, updated after each US trading day.
 The forecast is the volatility of SPY as a proxy for the S&P 500. It is not a trading signal.
