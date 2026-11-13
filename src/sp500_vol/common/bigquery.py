@@ -17,8 +17,9 @@ class BigQueryClient:
 
     def read_table(self, table: str) -> pd.DataFrame:
         table_id = self.get_table_id(table)
-        sql = f"SELECT * FROM `{table_id}`"
+        return self.query(f"SELECT * FROM `{table_id}`")
 
+    def query(self, sql: str) -> pd.DataFrame:
         # REST is enough for small tables, no Storage API warning
         return self.client.query(sql).to_dataframe(create_bqstorage_client=False)
 

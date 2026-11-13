@@ -51,3 +51,12 @@ jobs:
           -v "$GOOGLE_APPLICATION_CREDENTIALS:/creds/adc.json:ro"
           -e GOOGLE_APPLICATION_CREDENTIALS=/creds/adc.json
           "$IMAGE"
+
+  # the event stays workflow_dispatch, which Google accepts (ADR 7)
+  predict:
+    needs: run
+    uses: ./.github/workflows/inference-pipeline.yml
+    permissions:
+      contents: read
+      id-token: write
+      packages: read

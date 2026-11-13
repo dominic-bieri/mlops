@@ -57,7 +57,8 @@ PRINCIPAL="principalSet://iam.googleapis.com/projects/$PROJECT_NUMBER/locations/
 Needs `PROJECT_ID` and `PRINCIPAL` from above.
 
 ```bash
-for ROLE in roles/serviceusage.serviceUsageAdmin roles/bigquery.admin roles/storage.admin; do
+for ROLE in roles/serviceusage.serviceUsageAdmin roles/bigquery.admin roles/storage.admin \
+  roles/run.admin roles/artifactregistry.admin; do
   gcloud projects add-iam-policy-binding $PROJECT_ID \
     --member="$PRINCIPAL/terraform" --role="$ROLE" --condition=None
 done
@@ -112,6 +113,63 @@ done
 | `GCP_PROJECT_ID` | variable | `YOUR_PROJECT_ID` |
 | `GCP_REGION` | variable | same as `terraform` |
 | `GCP_WORKLOAD_IDENTITY_PROVIDER` | variable | same as `terraform` |
+
+## Cloud Run service accounts
+
+The API runs as `sp500-vol-api`, it can only read. The UI runs as `sp500-vol-ui` without roles.
+Create both before Terraform creates the services.
+
+```bash
+API_SA="sp500-vol-api@$PROJECT_ID.iam.gserviceaccount.com"
+UI_SA="sp500-vol-ui@$PROJECT_ID.iam.gserviceaccount.com"
+gcloud iam service-accounts create sp500-vol-api --project=$PROJECT_ID
+gcloud iam service-accounts create sp500-vol-ui --project=$PROJECT_ID
+
+for ROLE in roles/bigquery.jobUser roles/bigquery.dataViewer roles/aiplatform.viewer; do
+  gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member="serviceAccount:$API_SA" --role="$ROLE" --condition=None
+done
+
+gcloud storage buckets add-iam-policy-binding gs://$PROJECT_ID-models \
+  --member="serviceAccount:$API_SA" --role="roles/storage.objectViewer"
+
+# Terraform and the deploy job may start the services as these accounts
+for SA in $API_SA $UI_SA; do
+  for ENV in terraform inference-deploy; do
+    gcloud iam service-accounts add-iam-policy-binding $SA \
+      --member="$PRINCIPAL/$ENV" --role="roles/iam.serviceAccountUser"
+  done
+done
+```
+
+## Environment `inference-pipeline`
+
+```bash
+for ROLE in roles/bigquery.jobUser roles/bigquery.dataEditor roles/aiplatform.viewer; do
+  gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member="$PRINCIPAL/inference-pipeline" --role="$ROLE" --condition=None
+done
+
+gcloud storage buckets add-iam-policy-binding gs://$PROJECT_ID-models \
+  --member="$PRINCIPAL/inference-pipeline" --role="roles/storage.objectViewer"
+```
+
+Variables: `GCP_PROJECT_ID`, `GCP_REGION`, `GCP_WORKLOAD_IDENTITY_PROVIDER`, same as `training-pipeline`.
+
+## Environment `inference-deploy`
+
+After Terraform created the Artifact Registry repository `sp500-vol`.
+
+```bash
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="$PRINCIPAL/inference-deploy" --role="roles/run.developer" --condition=None
+
+gcloud artifacts repositories add-iam-policy-binding sp500-vol \
+  --project=$PROJECT_ID --location=europe-west6 \
+  --member="$PRINCIPAL/inference-deploy" --role="roles/artifactregistry.writer"
+```
+
+Variables: `GCP_PROJECT_ID`, `GCP_REGION`, `GCP_WORKLOAD_IDENTITY_PROVIDER`, same as `training-pipeline`.
 
 ## Cost limit
 

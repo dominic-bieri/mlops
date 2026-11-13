@@ -1,0 +1,24 @@
+# API and UI locally, credentials from gcloud auth application-default login
+services:
+  api:
+    build:
+      context: .
+      target: inference
+    env_file: .env
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /creds/adc.json
+    volumes:
+      - ~/.config/gcloud/application_default_credentials.json:/creds/adc.json:ro
+    ports:
+      - "8000:8080"
+
+  ui:
+    build:
+      context: .
+      target: ui
+    environment:
+      API_URL: http://api:8080
+    ports:
+      - "8501:8080"
+    depends_on:
+      - api

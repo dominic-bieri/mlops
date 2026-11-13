@@ -4,6 +4,7 @@ from types import SimpleNamespace
 import lightgbm as lgb
 import pytest
 from fake_data import make_features
+from google.api_core.exceptions import NotFound
 from sklearn.metrics import mean_absolute_error
 
 from sp500_vol.features.build import FEATURE_COLUMNS, LABEL_COLUMN
@@ -41,7 +42,7 @@ def test_should_register(
 
 def make_current(booster: lgb.Booster, age: timedelta) -> tuple[SimpleNamespace, SimpleNamespace]:
     current = SimpleNamespace(version_create_time=datetime.now(UTC) - age)
-    registry = SimpleNamespace(load_model=lambda registered: booster)
+    registry = SimpleNamespace(load_model=lambda registered: booster, load_metadata=lambda r: {})
     return registry, current
 
 
@@ -73,6 +74,18 @@ def test_current_model_with_other_features_does_not_count() -> None:
     renamed = train[FEATURE_COLUMNS].set_axis(other, axis=1)
     model = lgb.LGBMRegressor(n_estimators=10, verbose=-1).fit(renamed, train[LABEL_COLUMN])
     registry, current = make_current(model.booster_, timedelta(days=30))
+
+    assert get_current_mae(registry, current, make_features(200, seed=2)) is None
+
+
+def test_current_model_without_metadata_does_not_count() -> None:
+    model = refit_model(make_features(500, seed=1), trees=30)
+    registry, current = make_current(model.booster_, timedelta(days=30))
+
+    def load_metadata(registered: SimpleNamespace) -> dict:
+        raise NotFound("metadata.json")
+
+    registry.load_metadata = load_metadata
 
     assert get_current_mae(registry, current, make_features(200, seed=2)) is None
 
