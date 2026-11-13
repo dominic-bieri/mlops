@@ -1,3 +1,5 @@
+import json
+
 import lightgbm as lgb
 from google.api_core.exceptions import NotFound
 from google.cloud import aiplatform, storage
@@ -9,6 +11,7 @@ CHAMPION = "champion"
 # registry needs an image, inference runs on Cloud Run
 SERVING_IMAGE = "us-docker.pkg.dev/cloudrun/container/placeholder:latest"
 MODEL_FILE = "model.txt"
+METADATA_FILE = "metadata.json"
 
 
 class ModelRegistry:
@@ -35,8 +38,14 @@ class ModelRegistry:
             return None
 
     def load_model(self, registered: aiplatform.Model) -> lgb.Booster:
-        blob = storage.Blob.from_uri(f"{registered.uri}/{MODEL_FILE}", client=self.client)
-        return lgb.Booster(model_str=blob.download_as_text())
+        return lgb.Booster(model_str=self.download(registered, MODEL_FILE))
+
+    def load_metadata(self, registered: aiplatform.Model) -> dict:
+        return json.loads(self.download(registered, METADATA_FILE))
+
+    def download(self, registered: aiplatform.Model, file: str) -> str:
+        blob = storage.Blob.from_uri(f"{registered.uri}/{file}", client=self.client)
+        return blob.download_as_text()
 
     def upload(self, path: str, text: str) -> str:
         blob = self.bucket.blob(path)
@@ -46,12 +55,14 @@ class ModelRegistry:
     def register(
         self,
         model: lgb.LGBMRegressor,
+        metadata: dict,
         run_name: str,
         parent: str | None,
         description: str,
         labels: dict[str, str],
     ) -> str:
         self.upload(f"{run_name}/{MODEL_FILE}", model.booster_.model_to_string())
+        self.upload(f"{run_name}/{METADATA_FILE}", json.dumps(metadata, indent=2))
         registered = aiplatform.Model.upload(
             display_name=MODEL_NAME,
             artifact_uri=f"gs://{self.bucket.name}/{run_name}",
