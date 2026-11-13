@@ -55,10 +55,72 @@ jobs:
 
       - name: Build and push
         run: |
-          for target in features training; do
-            docker build --target "$target" -t "$IMAGE-$target:$GITHUB_SHA" \
+          for target in features training inference ui; do
+            docker build --target "$target" -t "$IMAGE-$target:$GITHUB_SHA" --build-arg GITHUB_SHA \
               --label "org.opencontainers.image.source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" .
             docker push "$IMAGE-$target:$GITHUB_SHA"
+          done
+
+  deploy:
+    needs: docker
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: deploy
+      cancel-in-progress: false
+    environment: inference-deploy
+    permissions:
+      contents: read
+      id-token: write
+      packages: read
+    env:
+      REGION: ${{ vars.GCP_REGION }}
+      SOURCE: ghcr.io/${{ github.repository_owner }}/sp500-vol
+      REPOSITORY: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/sp500-vol
+    steps:
+      - uses: google-github-actions/auth@v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+
+      # Cloud Run can't pull from GHCR
+      - name: Copy image to Artifact Registry
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "$GH_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          gcloud auth configure-docker "$REGION-docker.pkg.dev" --quiet
+          for image in inference ui; do
+            docker pull "$SOURCE-$image:$GITHUB_SHA"
+            docker tag "$SOURCE-$image:$GITHUB_SHA" "$REPOSITORY/$image:$GITHUB_SHA"
+            docker push "$REPOSITORY/$image:$GITHUB_SHA"
+          done
+
+      - name: Deploy candidates
+        run: |
+          gcloud run deploy sp500-vol-api --image "$REPOSITORY/inference:$GITHUB_SHA" --region "$REGION" \
+            --no-traffic --tag candidate --quiet
+          gcloud run deploy sp500-vol-ui --image "$REPOSITORY/ui:$GITHUB_SHA" --region "$REGION" \
+            --no-traffic --tag candidate --quiet
+
+      - name: Smoke test
+        run: |
+          candidate() {
+            gcloud run services describe "sp500-vol-$1" --region "$REGION" --format=json \
+              | jq -r '.status.traffic[] | select(.tag == "candidate") | .url'
+          }
+          API_URL=$(candidate api)
+          curl -fsS --retry 10 --retry-delay 5 --retry-all-errors "$API_URL/health" \
+            | jq -e --arg commit "$GITHUB_SHA" '.git_commit == $commit'
+          curl -fsS "$API_URL/predict" | jq -e '.prediction > 0'
+          curl -fsS --retry 10 --retry-delay 5 --retry-all-errors "$(candidate ui)/_stcore/health"
+
+      - name: Switch traffic
+        run: |
+          gcloud run services update-traffic sp500-vol-api --region "$REGION" --to-latest
+          gcloud run services update-traffic sp500-vol-ui --region "$REGION" --to-latest
+          for image in inference ui; do
+            gcloud artifacts docker tags add "$REPOSITORY/$image:$GITHUB_SHA" "$REPOSITORY/$image:live" --quiet
           done
 
   # every uses: must match .github/workflows/actions.lock
