@@ -7,7 +7,7 @@ The UI must be public and cost nothing when nobody looks. An Agent Platform endp
 
 ## Decision
 
-- Batch job `predict` at the end of the feature pipeline, as a reusable workflow, so Google accepts the token
+- Batch job in its own workflow `inference-pipeline`, started by the feature pipeline with `workflow_dispatch` and the commit of its run: own run and badge, same image as the feature run. `workflow_run` is not possible, Google only accepts tokens from `push`, `schedule` and `workflow_dispatch`
 - One row per new feature day in `predictions`, the first run only the newest day
 - Features come from the `features` table, the same values as in training
 - Baselines are fitted at training and saved in `metadata.json` next to the model
@@ -24,5 +24,6 @@ The UI must be public and cost nothing when nobody looks. An Agent Platform endp
 - No cost when idle, the first request waits for the cold start of both services
 - An open UI tab keeps a websocket open and the CPU billed, the free tier covers about 50 hours per month
 - A new champion shows its first forecast after the next feature run
+- A failed inference run doesn't turn the feature run red, only its own badge
 - The first deploy fails, `predictions` is still empty: run the feature pipeline once, then re-run the deploy job
 - A champion without `metadata.json` can't be served, the training pipeline must run once

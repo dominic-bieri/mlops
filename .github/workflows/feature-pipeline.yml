@@ -52,11 +52,18 @@ jobs:
           -e GOOGLE_APPLICATION_CREDENTIALS=/creds/adc.json
           "$IMAGE"
 
-  # the event stays workflow_dispatch, which Google accepts (ADR 7)
+  # own run with its own badge; workflow_run is not possible, Google only accepts
+  # tokens from push, schedule and workflow_dispatch (ADR 7)
   predict:
     needs: run
-    uses: ./.github/workflows/inference-pipeline.yml
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
     permissions:
-      contents: read
-      id-token: write
-      packages: read
+      actions: write
+    steps:
+      - name: Start inference pipeline with the commit of this run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh workflow run inference-pipeline.yml
+          --repo "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME" -f sha="$GITHUB_SHA"
