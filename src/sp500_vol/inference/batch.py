@@ -17,7 +17,7 @@ from sp500_vol.common.registry import (
     load_booster,
     load_registered_model,
 )
-from sp500_vol.inference.drift import PSI_WARNING, get_drift
+from sp500_vol.inference.drift import get_drift
 from sp500_vol.inference.predict import get_new_days, predict
 
 logger = logging.getLogger(__name__)
@@ -67,7 +67,7 @@ def main() -> None:
     bq.append(predictions, "predictions")
     bq.append(drift, "drift")
     latest = predictions.iloc[-1]
-    drifted = drift.loc[drift["psi"] > PSI_WARNING, "feature"].tolist()
+    drifted = drift.loc[drift["psi"] > drift["threshold"], "feature"].tolist()
     github_notice(
         "Inference: new forecast",
         [
@@ -75,7 +75,7 @@ def main() -> None:
             f"Forecast: {latest['prediction']:.1f}, HAR-RV {latest['har_rv']:.1f}",
             f"Model version: {champion.version}",
             f"New days: {len(predictions)}",
-            f"PSI > {PSI_WARNING}: {', '.join(drifted) or 'none'}",
+            f"PSI above threshold: {', '.join(drifted) or 'none'}",
         ],
     )
 

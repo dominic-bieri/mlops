@@ -278,7 +278,7 @@ resource "google_bigquery_table" "drift" {
       name        = "psi"
       type        = "FLOAT64"
       mode        = "REQUIRED"
-      description = "Population stability index, above 0.25 is a warning."
+      description = "Population stability index."
     },
     {
       name        = "model_version"
@@ -291,6 +291,12 @@ resource "google_bigquery_table" "drift" {
       type        = "TIMESTAMP"
       mode        = "REQUIRED"
       description = "When the PSI was computed (UTC)."
+    },
+    {
+      name        = "threshold"
+      type        = "FLOAT64"
+      mode        = "NULLABLE"
+      description = "PSI above it is a warning: 95th percentile of the 60-day windows in training, empty before this column."
     },
   ])
 }
