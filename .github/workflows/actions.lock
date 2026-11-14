@@ -6,8 +6,11 @@ workflows:
     '.github/workflows/ci.yml':
         - 'actions/checkout@v7.0.1'
         - 'astral-sh/setup-uv@v10.3.3'
+        - 'google-github-actions/auth@v3.0.0'
     '.github/workflows/feature-pipeline.yml':
         - 'actions/checkout@v7.0.1'
+        - 'google-github-actions/auth@v3.0.0'
+    '.github/workflows/inference-pipeline.yml':
         - 'google-github-actions/auth@v3.0.0'
     '.github/workflows/render-pdf.yml':
         - 'actions/checkout@v7.0.1'
