@@ -2,11 +2,15 @@
 
 [![Feature pipeline](https://github.com/dominic-bieri/mlops/actions/workflows/feature-pipeline.yml/badge.svg)](https://github.com/dominic-bieri/mlops/actions/workflows/feature-pipeline.yml)
 [![Training pipeline](https://github.com/dominic-bieri/mlops/actions/workflows/training-pipeline.yml/badge.svg)](https://github.com/dominic-bieri/mlops/actions/workflows/training-pipeline.yml)
+[![Inference pipeline](https://github.com/dominic-bieri/mlops/actions/workflows/inference-pipeline.yml/badge.svg)](https://github.com/dominic-bieri/mlops/actions/workflows/inference-pipeline.yml)
 [![CI](https://github.com/dominic-bieri/mlops/actions/workflows/ci.yml/badge.svg)](https://github.com/dominic-bieri/mlops/actions/workflows/ci.yml)
 [![Terraform](https://github.com/dominic-bieri/mlops/actions/workflows/terraform.yml/badge.svg)](https://github.com/dominic-bieri/mlops/actions/workflows/terraform.yml)
+[![Render PDF](https://github.com/dominic-bieri/mlops/actions/workflows/render-pdf.yml/badge.svg)](https://github.com/dominic-bieri/mlops/actions/workflows/render-pdf.yml)
 
 MLOps HS26. Predicts how much the S&P 500 will move over the next 5 trading days, updated after each US trading day.
 The forecast is the volatility of SPY as a proxy for the S&P 500. It is not a trading signal.
+
+Live: [UI](https://sp500-vol-ui-udjtjgs5dq-oa.a.run.app) · [API](https://sp500-vol-api-udjtjgs5dq-oa.a.run.app/docs). The first request after a quiet time takes a few seconds, the services start from zero.
 
 - [Proposal](docs/proposal.pdf)
 - [MS2 summary](docs/ms2_summary.pdf)
@@ -30,7 +34,7 @@ Each run shows its result on its run page, also without a GitHub login: open a r
 
 - Feature pipeline: `Features: new snapshot`
 - Training pipeline: `Training: new model registered` or `Training: no new model`
-- Inference pipeline (job `predict` of the feature pipeline): `Inference: new forecast` or `Inference: no new feature day`
+- Inference pipeline (started by the feature pipeline): `Inference: new forecast` or `Inference: no new feature day`
 
 ## Changes since the proposal
 
