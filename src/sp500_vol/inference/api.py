@@ -11,7 +11,6 @@ from sp500_vol.common.bigquery import BigQueryClient
 from sp500_vol.common.config import get_git_commit
 from sp500_vol.common.registry import RegisteredModel, load_registered_model
 from sp500_vol.features.build import LABEL_COLUMN
-from sp500_vol.inference.drift import PSI_WARNING
 from sp500_vol.inference.predict import is_stale
 
 CACHE_SECONDS = 600
@@ -118,7 +117,7 @@ def get_live_mae(predictions: pd.DataFrame, version: str) -> tuple[int, dict[str
 def get_drifted(drift: pd.DataFrame, version: str) -> list[str]:
     rows = drift[drift["model_version"] == version]
     newest = rows[rows["date"] == rows["date"].max()]
-    return newest.loc[newest["psi"] > PSI_WARNING, "feature"].tolist()
+    return newest.loc[newest["psi"] > newest["threshold"], "feature"].tolist()
 
 
 # a version never changes
