@@ -40,6 +40,9 @@ Each run shows its result on its run page, also without a GitHub login: open a r
 - Success criterion: lower MAE than HAR-RV, instead of 10 % better than the 20-day volatility. The scaled VIX is only reported
 - Each `features` version is kept as a BigQuery snapshot with its Git commit ([ADR 2](docs/adr/0002-feature-store.md))
 - Terraform for all BigQuery tables, applied by GitHub Actions when a merge to `main` changes `terraform/`
+- Batch prediction instead of on request: the forecast needs no input and changes once a day ([ADR 7](docs/adr/0007-inference.md))
+- Streamlit UI as a second Cloud Run service instead of a page in the API
+- No Yahoo Finance backup, Tiingo and FRED were reliable enough
 
 ## Requirements
 
@@ -97,3 +100,14 @@ docker run --rm --env-file .env \
 Training the same with `--target training`. `.env` and the credentials are only passed at run time, never copied into the image.
 
 API and UI together: `docker compose up --build`, UI on http://localhost:8501.
+
+## Rollback
+
+Bad code: the previous revision gets all traffic again, the same for `sp500-vol-ui`. The next deploy of `main` switches back to the newest revision.
+
+```bash
+gcloud run revisions list --service sp500-vol-api --region europe-west6
+gcloud run services update-traffic sp500-vol-api --region europe-west6 --to-revisions REVISION=100
+```
+
+Bad model: in the Agent Platform Model Registry, set the alias `champion` on the previous version of `sp500-vol`. The next feature run forecasts with it.

@@ -43,16 +43,6 @@ def label(name: str) -> str:
     return LINES[name][0]
 
 
-def get_range(dates: list, preset: str) -> tuple:
-    days = PRESETS[preset] or len(dates)
-    return dates[max(len(dates) - days, 0)], dates[-1]
-
-
-def apply_preset(dates: list) -> None:
-    if st.session_state.preset:
-        st.session_state.range = get_range(dates, st.session_state.preset)
-
-
 st.metric("Forecast", f"{forecast['prediction']:.1f} %")
 st.caption(
     f"Model version {model['model_version']} (trained until {model['train_end']}) · "
@@ -64,23 +54,11 @@ if forecast["stale"]:
 
 # the API calls the model forecast "prediction" here
 chart = rows.rename(columns={"prediction": "model"}).set_index(pd.to_datetime(rows["date"]))
-# a slider needs two days, the first batch run writes one
-if len(chart) > 1:
-    dates = list(chart.index.date)
-    st.session_state.setdefault("preset", "3 months")
-    st.session_state.setdefault("range", get_range(dates, "3 months"))
-    st.segmented_control("Range", list(PRESETS), key="preset", on_change=apply_preset, args=[dates])
-    # a moved slider is no preset anymore
-    start, end = st.slider(
-        "Range",
-        min_value=dates[0],
-        max_value=dates[-1],
-        key="range",
-        format="YYYY-MM-DD",
-        label_visibility="collapsed",
-        on_change=lambda: st.session_state.update(preset=None),
-    )
-    chart = chart.loc[pd.Timestamp(start) : pd.Timestamp(end)]
+preset = st.segmented_control("Range", list(PRESETS), default="3 months")
+# deselected shows all days
+days = PRESETS.get(preset)
+if days is not None:
+    chart = chart.tail(days)
 lines = st.pills(
     "Lines", list(LINES), selection_mode="multi", default=list(LINES), format_func=label
 )

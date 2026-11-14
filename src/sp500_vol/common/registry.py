@@ -1,10 +1,12 @@
 import json
+from dataclasses import dataclass
 
 import lightgbm as lgb
 from google.api_core.exceptions import NotFound
 from google.cloud import aiplatform, storage
 
-from sp500_vol.common.config import get_gcp_project_id
+from sp500_vol.common.config import get_gcp_project_id, get_gcp_region
+from sp500_vol.features.build import FEATURE_COLUMNS
 
 MODEL_NAME = "sp500-vol"
 CHAMPION = "champion"
@@ -73,3 +75,33 @@ class ModelRegistry:
             labels=labels,
         )
         return registered.version_id
+
+
+@dataclass
+class RegisteredModel:
+    version: str
+    labels: dict[str, str]
+    metadata: dict
+
+
+# version is a version id or an alias
+def get_registered(version: str) -> aiplatform.Model:
+    aiplatform.init(project=get_gcp_project_id(), location=get_gcp_region())
+    parent = ModelRegistry().get_parent()
+    if parent is None:
+        raise RuntimeError("no model, run the training pipeline first")
+    return aiplatform.Model(f"{parent}@{version}")
+
+
+def load_registered_model(version: str) -> RegisteredModel:
+    registered = get_registered(version)
+    metadata = ModelRegistry().load_metadata(registered)
+    return RegisteredModel(registered.version_id, dict(registered.labels), metadata)
+
+
+def load_booster(version: str) -> lgb.Booster:
+    registered = get_registered(version)
+    booster = ModelRegistry().load_model(registered)
+    if booster.feature_name() != FEATURE_COLUMNS:
+        raise RuntimeError(f"model {registered.version_id} has other features")
+    return booster

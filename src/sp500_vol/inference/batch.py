@@ -1,6 +1,7 @@
 import logging
 from datetime import UTC, date, datetime
 
+import lightgbm as lgb
 import pandas as pd
 
 from sp500_vol.common.bigquery import BigQueryClient
@@ -10,15 +11,22 @@ from sp500_vol.common.config import (
     is_github_actions,
     setup_logging,
 )
+from sp500_vol.common.registry import (
+    CHAMPION,
+    RegisteredModel,
+    load_booster,
+    load_registered_model,
+)
 from sp500_vol.inference.drift import PSI_WARNING, get_drift
-from sp500_vol.inference.model import Champion, load_champion
 from sp500_vol.inference.predict import get_new_days, predict
 
 logger = logging.getLogger(__name__)
 
 
-def make_predictions(new_days: pd.DataFrame, champion: Champion) -> pd.DataFrame:
-    df = predict(new_days, champion.booster, champion.metadata)
+def make_predictions(
+    new_days: pd.DataFrame, champion: RegisteredModel, booster: lgb.Booster
+) -> pd.DataFrame:
+    df = predict(new_days, booster, champion.metadata)
     df["model_version"] = champion.version
     df["model_run"] = champion.labels.get("run", "")
     df["git_commit"] = get_git_commit()
@@ -26,7 +34,7 @@ def make_predictions(new_days: pd.DataFrame, champion: Champion) -> pd.DataFrame
     return df
 
 
-def make_drift(features: pd.DataFrame, champion: Champion) -> pd.DataFrame:
+def make_drift(features: pd.DataFrame, champion: RegisteredModel) -> pd.DataFrame:
     train_end = date.fromisoformat(champion.metadata["train_end"])
     df = get_drift(features, train_end)
     df["date"] = features["date"].max()
@@ -43,8 +51,10 @@ def main() -> None:
         github_notice("Inference: no new feature day", [f"Newest day: {features['date'].max()}"])
         return
 
-    champion = load_champion()
-    predictions = make_predictions(new_days, champion)
+    champion = load_registered_model(CHAMPION)
+    # by version id, the alias may move in between
+    booster = load_booster(champion.version)
+    predictions = make_predictions(new_days, champion, booster)
     drift = make_drift(features, champion)
     logger.info("predictions:\n%s", predictions.to_string())
     logger.info("drift:\n%s", drift.to_string())

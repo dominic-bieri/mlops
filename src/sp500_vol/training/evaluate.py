@@ -1,31 +1,11 @@
 import lightgbm as lgb
 import numpy as np
 import pandas as pd
-from sklearn.linear_model import LinearRegression
 
+from sp500_vol.common.baselines import predict_har_rv, predict_vix_scaled
 from sp500_vol.features.build import FEATURE_COLUMNS, LABEL_COLUMN
 
-HAR_COLUMNS = ["rv_1d", "rv_5d", "rv_22d"]
 VIX_STRESSED = 20
-
-
-# the VIX factor removes the risk premium (ADR 4)
-def get_baselines(train: pd.DataFrame) -> dict:
-    har = LinearRegression().fit(train[HAR_COLUMNS], train[LABEL_COLUMN])
-    return {
-        "har_intercept": float(har.intercept_),
-        "har_coef": dict(zip(HAR_COLUMNS, har.coef_.tolist(), strict=True)),
-        "vix_factor": float(train[LABEL_COLUMN].mean() / train["vix"].mean()),
-    }
-
-
-def predict_har_rv(df: pd.DataFrame, baselines: dict) -> pd.Series:
-    terms = [coef * df[column] for column, coef in baselines["har_coef"].items()]
-    return baselines["har_intercept"] + sum(terms)
-
-
-def predict_vix_scaled(df: pd.DataFrame, baselines: dict) -> pd.Series:
-    return baselines["vix_factor"] * df["vix"]
 
 
 def get_errors(model: lgb.LGBMRegressor, baselines: dict, df: pd.DataFrame) -> pd.DataFrame:

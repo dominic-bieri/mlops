@@ -1653,6 +1653,7 @@ version = "0.1.0"
 source = { editable = "." }
 default-groups = "all"
 dependencies = [
+    { name = "fastapi" },
     { name = "google-cloud-aiplatform" },
     { name = "google-cloud-bigquery", extra = ["pandas"] },
     { name = "google-cloud-storage" },
@@ -1662,13 +1663,10 @@ dependencies = [
     { name = "python-dotenv" },
     { name = "requests" },
     { name = "scikit-learn" },
+    { name = "uvicorn" },
 ]
 
 [package.dev-dependencies]
-api = [
-    { name = "fastapi" },
-    { name = "uvicorn" },
-]
 dev = [
     { name = "httpx2" },
     { name = "pytest" },
@@ -1682,6 +1680,7 @@ ui = [
 
 [package.metadata]
 requires-dist = [
+    { name = "fastapi", specifier = "==0.162.5" },
     { name = "google-cloud-aiplatform", specifier = "==2.7.0" },
     { name = "google-cloud-bigquery", extras = ["pandas"], specifier = "==3.47.0" },
     { name = "google-cloud-storage", specifier = "==3.17.1" },
@@ -1691,13 +1690,10 @@ requires-dist = [
     { name = "python-dotenv", specifier = "==1.2.4" },
     { name = "requests", specifier = "==2.34.2" },
     { name = "scikit-learn", specifier = "==1.9.1" },
+    { name = "uvicorn", specifier = "==0.54.0" },
 ]
 
 [package.metadata.requires-dev]
-api = [
-    { name = "fastapi", specifier = "==0.162.5" },
-    { name = "uvicorn", specifier = "==0.54.0" },
-]
 dev = [
     { name = "httpx2", specifier = "==2.16.0" },
     { name = "pytest", specifier = "==9.2.0" },

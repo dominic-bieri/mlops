@@ -13,14 +13,12 @@ dependencies = [
     "lightgbm==4.7.0",
     "google-cloud-aiplatform==2.7.0",
     "google-cloud-storage==3.17.1",
-]
-
-# each image installs only its group, see Dockerfile
-[dependency-groups]
-api = [
     "fastapi==0.162.5",
     "uvicorn==0.54.0",
 ]
+
+# the ui image installs only its group, see Dockerfile
+[dependency-groups]
 ui = [
     "streamlit==1.67.0",
     "requests==2.34.2",

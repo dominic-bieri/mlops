@@ -1,5 +1,4 @@
 import time
-from collections.abc import Callable
 from datetime import date, datetime
 from functools import lru_cache
 from zoneinfo import ZoneInfo
@@ -10,14 +9,20 @@ from pydantic import BaseModel
 
 from sp500_vol.common.bigquery import BigQueryClient
 from sp500_vol.common.config import get_git_commit
+from sp500_vol.common.registry import RegisteredModel, load_registered_model
 from sp500_vol.features.build import LABEL_COLUMN
 from sp500_vol.inference.drift import PSI_WARNING
-from sp500_vol.inference.model import RegisteredModel, load_registered_model
 from sp500_vol.inference.predict import is_stale
 
 CACHE_SECONDS = 600
 NEW_YORK = ZoneInfo("America/New_York")
-FORECASTS = ["model", "rv_20d", "har_rv", "vix_scaled"]
+# name in the API: column in predictions
+FORECASTS = {
+    "model": "prediction",
+    "rv_20d": "rv_20d",
+    "har_rv": "har_rv",
+    "vix_scaled": "vix_scaled",
+}
 
 
 class Health(BaseModel):
@@ -64,12 +69,8 @@ class ModelInfo(BaseModel):
 app = FastAPI(title="S&P 500 volatility forecast")
 
 
-def cached(read: Callable[..., pd.DataFrame]) -> Callable[..., pd.DataFrame]:
-    @lru_cache(maxsize=8)
-    def read_period(period: int, *args: str) -> pd.DataFrame:
-        return read(*args)
-
-    return lambda *args: read_period(int(time.time() // CACHE_SECONDS), *args)
+# BigQuery at most every 10 minutes per table, the data changes once a day
+cache: dict[str, tuple[float, pd.DataFrame]] = {}
 
 
 @lru_cache
@@ -81,33 +82,43 @@ def table(name: str) -> str:
     return bq().get_table_id(name)
 
 
-@cached
+def read_cached(name: str, sql: str) -> pd.DataFrame:
+    now = time.time()
+    if name in cache:
+        read_at, df = cache[name]
+        if now - read_at < CACHE_SECONDS:
+            return df
+    df = bq().query(sql)
+    cache[name] = (now, df)
+    return df
+
+
 def read_predictions() -> pd.DataFrame:
     sql = (
         f"SELECT p.*, f.{LABEL_COLUMN} AS actual FROM `{table('predictions')}` p "
         f"LEFT JOIN `{table('features')}` f USING (date) ORDER BY date"
     )
-    return bq().query(sql)
+    return read_cached("predictions", sql)
 
 
-@cached
-def read_live_errors(version: str) -> pd.DataFrame:
-    averages = ", ".join(f"AVG({name}_error) AS {name}" for name in FORECASTS)
-    sql = (
-        f"SELECT COUNT(*) AS days, {averages} FROM `{table('prediction_errors')}` "
-        f"WHERE model_version = '{version}'"
-    )
-    return bq().query(sql)
+def read_drift() -> pd.DataFrame:
+    return read_cached("drift", f"SELECT * FROM `{table('drift')}`")
 
 
-@cached
-def read_drifted(version: str) -> pd.DataFrame:
-    sql = (
-        f"SELECT feature FROM `{table('drift')}` WHERE model_version = '{version}' "
-        f"AND psi > {PSI_WARNING} AND date = "
-        f"(SELECT MAX(date) FROM `{table('drift')}` WHERE model_version = '{version}')"
-    )
-    return bq().query(sql)
+def get_live_mae(predictions: pd.DataFrame, version: str) -> tuple[int, dict[str, float | None]]:
+    known = predictions[(predictions["model_version"] == version) & predictions["actual"].notna()]
+    mae = {}
+    for name, column in FORECASTS.items():
+        errors = (known[column] - known["actual"]).abs()
+        mae[name] = to_optional(errors.mean())
+    return len(known), mae
+
+
+# only the newest PSI of this version counts
+def get_drifted(drift: pd.DataFrame, version: str) -> list[str]:
+    rows = drift[drift["model_version"] == version]
+    newest = rows[rows["date"] == rows["date"].max()]
+    return newest.loc[newest["psi"] > PSI_WARNING, "feature"].tolist()
 
 
 # a version never changes
@@ -157,7 +168,7 @@ def predictions() -> list[PredictionRow]:
 def model() -> ModelInfo:
     version = newest()["model_version"]
     registered = get_model(version)
-    live = read_live_errors(version).iloc[0]
+    live_days, live_mae = get_live_mae(read_predictions(), version)
     return ModelInfo(
         model_version=version,
         run=registered.labels.get("run", ""),
@@ -165,7 +176,7 @@ def model() -> ModelInfo:
         training_commit=registered.labels.get("git_commit", ""),
         train_end=registered.metadata["train_end"],
         test_mae=registered.metadata["test_mae"],
-        live_days=int(live["days"]),
-        live_mae={name: to_optional(live[name]) for name in FORECASTS},
-        drifted=read_drifted(version)["feature"].tolist(),
+        live_days=live_days,
+        live_mae=live_mae,
+        drifted=get_drifted(read_drift(), version),
     )
