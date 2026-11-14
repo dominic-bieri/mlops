@@ -5,8 +5,8 @@ import pandas as pd
 import pytest
 from fastapi.testclient import TestClient
 
+from sp500_vol.common.registry import RegisteredModel
 from sp500_vol.inference import api
-from sp500_vol.inference.model import RegisteredModel
 
 
 @pytest.fixture
@@ -32,14 +32,19 @@ def client(monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
             "actual": [15.5] * 5 + [np.nan] * 5,
         }
     )
-    errors = pd.DataFrame(
-        {"days": [5], "model": [0.5], "rv_20d": [1.5], "har_rv": [0.5], "vix_scaled": [1.5]}
+    # rv_5d drifted earlier, only vix in the newest run
+    drift = pd.DataFrame(
+        {
+            "date": [dates[-2], dates[-1], dates[-1]],
+            "feature": ["rv_5d", "rv_5d", "vix"],
+            "psi": [0.4, 0.1, 0.3],
+            "model_version": "3",
+        }
     )
 
     monkeypatch.setattr(api, "get_model", lambda version: registered)
     monkeypatch.setattr(api, "read_predictions", lambda: predictions)
-    monkeypatch.setattr(api, "read_live_errors", lambda version: errors)
-    monkeypatch.setattr(api, "read_drifted", lambda version: pd.DataFrame({"feature": ["vix"]}))
+    monkeypatch.setattr(api, "read_drift", lambda: drift)
     monkeypatch.setenv("GITHUB_SHA", "def")
     with TestClient(api.app) as test_client:
         yield test_client
@@ -78,4 +83,5 @@ def test_model_shows_test_and_live_mae(client: TestClient) -> None:
     assert body["test_mae"]["model"] == 2.5
     assert body["live_days"] == 5
     assert body["live_mae"]["model"] == 0.5
+    assert body["live_mae"]["vix_scaled"] == 1.5
     assert body["drifted"] == ["vix"]

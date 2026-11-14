@@ -8,6 +8,7 @@ from google.api_core.exceptions import NotFound
 from google.cloud import aiplatform
 from sklearn.metrics import mean_absolute_error
 
+from sp500_vol.common.baselines import get_baselines
 from sp500_vol.common.bigquery import BigQueryClient
 from sp500_vol.common.config import (
     get_gcp_project_id,
@@ -18,10 +19,10 @@ from sp500_vol.common.config import (
     is_github_actions,
     setup_logging,
 )
+from sp500_vol.common.registry import MODEL_NAME, ModelRegistry
 from sp500_vol.features.build import FEATURE_COLUMNS, LABEL_COLUMN, SNAPSHOT_PREFIX
-from sp500_vol.training.evaluate import get_baselines, get_errors, get_errors_by_year
+from sp500_vol.training.evaluate import get_errors, get_errors_by_year
 from sp500_vol.training.model import fit_model, refit_model
-from sp500_vol.training.registry import MODEL_NAME, ModelRegistry
 from sp500_vol.training.split import get_cutoff, split
 
 logger = logging.getLogger(__name__)

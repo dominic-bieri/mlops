@@ -9,9 +9,6 @@ RUN uv sync --locked --no-default-groups --no-install-project
 COPY src ./src
 RUN uv sync --locked --no-default-groups --no-editable
 
-FROM builder AS api-builder
-RUN uv sync --locked --no-default-groups --group api --no-editable
-
 FROM uv AS ui-builder
 RUN uv sync --locked --only-group ui
 
@@ -31,7 +28,7 @@ USER app
 ENTRYPOINT ["python", "-m", "sp500_vol.training.train"]
 
 FROM lightgbm AS inference
-COPY --from=api-builder --chown=app:app /app/.venv /app/.venv
+COPY --from=builder --chown=app:app /app/.venv /app/.venv
 ARG GITHUB_SHA=local
 ENV GITHUB_SHA=$GITHUB_SHA
 USER app
