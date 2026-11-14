@@ -59,7 +59,7 @@ This is a regression task, so there is no rare class to handle.
 The system follows the feature, training and inference (FTI) split shown below.
 
 #figure(
-  image("media/System_Design.svg", width: 100%),
+  image("media/System_Design_MS1.svg", width: 100%),
 )
 
 == Core

@@ -4,9 +4,11 @@ from datetime import UTC, datetime, timedelta
 
 import lightgbm as lgb
 import pandas as pd
+from google.api_core.exceptions import NotFound
 from google.cloud import aiplatform
 from sklearn.metrics import mean_absolute_error
 
+from sp500_vol.common.baselines import get_baselines
 from sp500_vol.common.bigquery import BigQueryClient
 from sp500_vol.common.config import (
     get_gcp_project_id,
@@ -17,10 +19,10 @@ from sp500_vol.common.config import (
     is_github_actions,
     setup_logging,
 )
+from sp500_vol.common.registry import MODEL_NAME, ModelRegistry
 from sp500_vol.features.build import FEATURE_COLUMNS, LABEL_COLUMN, SNAPSHOT_PREFIX
 from sp500_vol.training.evaluate import get_errors, get_errors_by_year
 from sp500_vol.training.model import fit_model, refit_model
-from sp500_vol.training.registry import MODEL_NAME, ModelRegistry
 from sp500_vol.training.split import get_cutoff, split
 
 logger = logging.getLogger(__name__)
@@ -37,6 +39,7 @@ class TrainingResult:
     metrics: dict
     test: pd.DataFrame
     errors_by_year: pd.DataFrame
+    metadata: dict
 
 
 def get_current_mae(
@@ -53,6 +56,11 @@ def get_current_mae(
     booster = registry.load_model(current)
     if booster.feature_name() != FEATURE_COLUMNS:
         logger.info("current model has other features, only HAR-RV counts")
+        return None
+    try:
+        registry.load_metadata(current)
+    except NotFound:
+        logger.info("current model has no metadata, only HAR-RV counts")
         return None
 
     prediction = booster.predict(test[FEATURE_COLUMNS])
@@ -83,12 +91,13 @@ def train_and_evaluate(features: pd.DataFrame, snapshot: str) -> TrainingResult:
     # fitted on train, val only chooses the trees (ADR 4)
     tuned = fit_model(train, val)
     unseen = pd.concat([val, test])
-    errors_by_year = get_errors_by_year(tuned, train, unseen)
+    errors_by_year = get_errors_by_year(tuned, get_baselines(train), unseen)
     logger.info("mae per year:\n%s", errors_by_year.to_string())
 
     train_val = pd.concat([train, val])
     model = refit_model(train_val, tuned.best_iteration_)
-    errors = get_errors(model, train_val, test)
+    baselines = get_baselines(train_val)
+    errors = get_errors(model, baselines, test)
     metrics = {
         "test_mae": errors["model"].mean(),
         "rv_20d_test_mae": errors["rv_20d"].mean(),
@@ -107,8 +116,10 @@ def train_and_evaluate(features: pd.DataFrame, snapshot: str) -> TrainingResult:
         "num_leaves": model.num_leaves,
         "min_child_samples": model.min_child_samples,
     }
+    train_end = str(train_val["date"].max())
+    metadata = {"train_end": train_end, "test_mae": errors.mean().to_dict(), **baselines}
     logger.info("metrics: %s", {key: round(float(value), 4) for key, value in metrics.items()})
-    return TrainingResult(model, params, metrics, test, errors_by_year)
+    return TrainingResult(model, params, metrics, test, errors_by_year, metadata)
 
 
 def track_and_register(result: TrainingResult) -> None:
@@ -149,7 +160,9 @@ def track_and_register(result: TrainingResult) -> None:
                 "git_commit": params["git_commit"],
                 "snapshot": params["snapshot"],
             }
-            model_version = registry.register(result.model, run_name, parent, description, labels)
+            model_version = registry.register(
+                result.model, result.metadata, run_name, parent, description, labels
+            )
         aiplatform.log_params({"model_version": model_version or "none"})
 
     current_text = "none" if current_mae is None else f"{current_mae:.4f}"

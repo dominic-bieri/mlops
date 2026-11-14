@@ -18,7 +18,11 @@ The forecast is the volatility of SPY as a proxy for the S&P 500. It is not a tr
 
 - Feature pipeline: loads SPY and VIX into BigQuery and builds the `features` table with a versioned snapshot, daily ([`src/sp500_vol/features/`](src/sp500_vol/features/))
 - Training pipeline: trains LightGBM on the newest snapshot, registers it in Agent Platform if it beats HAR-RV and is not worse than the current model, monthly ([`src/sp500_vol/training/`](src/sp500_vol/training/))
-- Inference pipeline and UI: MS4
+- Inference pipeline: forecasts each new feature day with `sp500-vol@champion` into `predictions` and checks drift, after each feature run ([`src/sp500_vol/inference/`](src/sp500_vol/inference/), [ADR 7](docs/adr/0007-inference.md))
+- API: FastAPI on Cloud Run, reads `predictions`: `/predict`, `/predictions`, `/model`, `/health`
+- UI: Streamlit on Cloud Run, reads the API ([`ui/app.py`](ui/app.py))
+
+Batch prediction: the forecast needs no input from the request and changes once a day, so only the batch job runs the model; the API serves its rows.
 
 ## Pipeline results
 
@@ -26,6 +30,7 @@ Each run shows its result on its run page, also without a GitHub login: open a r
 
 - Feature pipeline: `Features: new snapshot`
 - Training pipeline: `Training: new model registered` or `Training: no new model`
+- Inference pipeline (job `predict` of the feature pipeline): `Inference: new forecast` or `Inference: no new feature day`
 
 ## Changes since the proposal
 
@@ -35,6 +40,9 @@ Each run shows its result on its run page, also without a GitHub login: open a r
 - Success criterion: lower MAE than HAR-RV, instead of 10 % better than the 20-day volatility. The scaled VIX is only reported
 - Each `features` version is kept as a BigQuery snapshot with its Git commit ([ADR 2](docs/adr/0002-feature-store.md))
 - Terraform for all BigQuery tables, applied by GitHub Actions when a merge to `main` changes `terraform/`
+- Batch prediction instead of on request: the forecast needs no input and changes once a day ([ADR 7](docs/adr/0007-inference.md))
+- Streamlit UI as a second Cloud Run service instead of a page in the API
+- No Yahoo Finance backup, Tiingo and FRED were reliable enough
 
 ## Requirements
 
@@ -61,6 +69,9 @@ uv run python -m sp500_vol.features.ingest       # load VIX and SPY
 uv run python -m sp500_vol.features.build        # rebuild features, writes only in GitHub Actions
 uv run python -m sp500_vol.features.pipeline     # both, as in the image
 uv run python -m sp500_vol.training.train        # train and show errors, registers only in GitHub Actions
+uv run python -m sp500_vol.inference.batch      # forecast new days, writes only in GitHub Actions
+uv run uvicorn sp500_vol.inference.api:app      # API on http://localhost:8000
+uv run streamlit run ui/app.py                  # UI on http://localhost:8501, needs the API
 uv run pytest
 ```
 
@@ -76,7 +87,7 @@ There is no separate backfill script, `ingest` decides on each run what to fetch
 
 ## Docker
 
-One `Dockerfile` with two targets, `features` (default) and `training`. [CI](.github/workflows/ci.yml) pushes both to GHCR on every commit to `main`, the pipelines pull the image of their commit.
+One `Dockerfile` with four targets, `features` (default), `training`, `inference` and `ui`. [CI](.github/workflows/ci.yml) pushes them to GHCR on every commit to `main`, the pipelines pull the image of their commit. CI also deploys `inference` and `ui` to Cloud Run: new revision without traffic, smoke test, then all traffic.
 
 ```bash
 docker build --target features -t sp500-vol-features .
@@ -87,3 +98,16 @@ docker run --rm --env-file .env \
 ```
 
 Training the same with `--target training`. `.env` and the credentials are only passed at run time, never copied into the image.
+
+API and UI together: `docker compose up --build`, UI on http://localhost:8501.
+
+## Rollback
+
+Bad code: the previous revision gets all traffic again, the same for `sp500-vol-ui`. The next deploy of `main` switches back to the newest revision.
+
+```bash
+gcloud run revisions list --service sp500-vol-api --region europe-west6
+gcloud run services update-traffic sp500-vol-api --region europe-west6 --to-revisions REVISION=100
+```
+
+Bad model: in the Agent Platform Model Registry, set the alias `champion` on the previous version of `sp500-vol`. The next feature run forecasts with it.

@@ -3,6 +3,8 @@ locals {
     "bigquery.googleapis.com",
     "aiplatform.googleapis.com",
     "storage.googleapis.com",
+    "run.googleapis.com",
+    "artifactregistry.googleapis.com",
   ]
 }
 

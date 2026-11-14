@@ -1,0 +1,47 @@
+name: Inference pipeline
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: inference-pipeline
+      cancel-in-progress: false
+    environment: inference-pipeline
+    permissions:
+      contents: read
+      id-token: write
+      packages: read
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION }}
+      BQ_DATASET: sp500_vol
+      IMAGE: ghcr.io/${{ github.repository_owner }}/sp500-vol-inference:${{ github.sha }}
+    steps:
+      - name: Pull image
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "$GH_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker pull "$IMAGE"
+
+      - uses: google-github-actions/auth@v3.0.0
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+
+      - name: Predict and check drift
+        run: >-
+          docker run --rm
+          -e GCP_PROJECT_ID -e GCP_REGION -e BQ_DATASET
+          -e GITHUB_ACTIONS -e GITHUB_SHA
+          -v "$GOOGLE_APPLICATION_CREDENTIALS:/creds/adc.json:ro"
+          -e GOOGLE_APPLICATION_CREDENTIALS=/creds/adc.json
+          --entrypoint python
+          "$IMAGE" -m sp500_vol.inference.batch
