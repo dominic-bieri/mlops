@@ -38,6 +38,7 @@ def client(monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
             "date": [dates[-2], dates[-1], dates[-1]],
             "feature": ["rv_5d", "rv_5d", "vix"],
             "psi": [0.4, 0.1, 0.3],
+            "threshold": 0.2,
             "model_version": "3",
         }
     )

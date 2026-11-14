@@ -11,7 +11,9 @@ The UI must be public and cost nothing when nobody looks. An Agent Platform endp
 - One row per new feature day in `predictions`, the first run only the newest day
 - Features come from the `features` table, the same values as in training
 - Baselines are fitted at training and saved in `metadata.json` next to the model
-- Drift: PSI per feature, last 60 days against the training days, above 0.25 a warning; retraining stays monthly (ADR 6)
+- Drift: PSI per feature, last 60 days against the training days; retraining stays monthly (ADR 6)
+- Warning when the PSI is above the 95th percentile of all 60-day windows in training, per feature. A fixed 0.25 warned in 57–100 % of past windows: volatility comes in regimes, 60 days in a row never look like 30 years
+- Half a count per bin instead of a minimum share, an empty bin added about 0.7 to the PSI
 - Live errors: the API joins `predictions` with the label in `features`, once it is known
 - Batch prediction only: the forecast needs no input from the request and changes once a day
 - API with FastAPI on Cloud Run, 0 to 1 instance, serves the newest row of `predictions` and the registry entry of its model version
