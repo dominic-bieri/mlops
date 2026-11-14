@@ -7,7 +7,7 @@ from sklearn.linear_model import LinearRegression
 
 from sp500_vol.common.baselines import HAR_COLUMNS, get_baselines
 from sp500_vol.features.build import LABEL_COLUMN
-from sp500_vol.inference.predict import get_new_days, is_stale, predict
+from sp500_vol.inference.predict import get_backfill, get_new_days, is_stale, predict
 from sp500_vol.training.model import refit_model
 from sp500_vol.training.train import train_and_evaluate
 
@@ -33,27 +33,43 @@ def test_metadata_has_baselines_and_train_end() -> None:
     assert set(metadata["test_mae"]) == {"model", "rv_20d", "har_rv", "vix_scaled"}
 
 
-def test_first_run_predicts_only_newest_day() -> None:
+def test_first_run_fills_test_period_as_backfill() -> None:
     features = make_features(30, seed=1)
+    train_end = features["date"].iloc[19]
 
-    new_days = get_new_days(features, set())
+    new_days = get_new_days(features, set(), train_end)
+    backfill = get_backfill(new_days["date"], set())
 
-    assert new_days["date"].tolist() == [features["date"].max()]
+    assert new_days["date"].tolist() == features["date"].iloc[20:].tolist()
+    assert backfill.tolist() == [True] * 9 + [False]
 
 
-def test_catches_up_missed_days() -> None:
+def test_catches_up_missed_days_as_live() -> None:
     features = make_features(30, seed=1)
     done = set(features["date"].iloc[:27])
 
-    new_days = get_new_days(features, done)
+    new_days = get_new_days(features, done, features["date"].iloc[10])
+    backfill = get_backfill(new_days["date"], done)
 
     assert new_days["date"].tolist() == features["date"].iloc[27:].tolist()
+    assert not backfill.any()
+
+
+def test_fills_test_period_before_first_live_forecast() -> None:
+    features = make_features(30, seed=1)
+    done = {features["date"].iloc[25]}
+
+    new_days = get_new_days(features, done, features["date"].iloc[19])
+    backfill = get_backfill(new_days["date"], done).tolist()
+
+    assert len(new_days) == 9
+    assert backfill == [True] * 5 + [False] * 4
 
 
 def test_nothing_new_twice() -> None:
     features = make_features(30, seed=1)
 
-    assert get_new_days(features, set(features["date"])).empty
+    assert get_new_days(features, set(features["date"]), features["date"].iloc[0]).empty
 
 
 @pytest.mark.parametrize(
