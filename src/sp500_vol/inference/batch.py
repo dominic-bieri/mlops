@@ -18,7 +18,7 @@ from sp500_vol.common.registry import (
     load_registered_model,
 )
 from sp500_vol.inference.drift import get_drift
-from sp500_vol.inference.predict import get_new_days, predict
+from sp500_vol.inference.predict import get_backfill, get_new_days, predict
 
 logger = logging.getLogger(__name__)
 
@@ -34,8 +34,7 @@ def make_predictions(
     return df
 
 
-def make_drift(features: pd.DataFrame, champion: RegisteredModel) -> pd.DataFrame:
-    train_end = date.fromisoformat(champion.metadata["train_end"])
+def make_drift(features: pd.DataFrame, champion: RegisteredModel, train_end: date) -> pd.DataFrame:
     df = get_drift(features, train_end)
     df["date"] = features["date"].max()
     df["model_version"] = champion.version
@@ -46,16 +45,19 @@ def make_drift(features: pd.DataFrame, champion: RegisteredModel) -> pd.DataFram
 def main() -> None:
     bq = BigQueryClient()
     features = bq.read_table("features")
-    new_days = get_new_days(features, bq.get_dates("predictions"))
+    champion = load_registered_model(CHAMPION)
+    train_end = date.fromisoformat(champion.metadata["train_end"])
+    predicted = bq.get_dates("predictions")
+    new_days = get_new_days(features, predicted, train_end)
     if new_days.empty:
         github_notice("Inference: no new feature day", [f"Newest day: {features['date'].max()}"])
         return
 
-    champion = load_registered_model(CHAMPION)
     # by version id, the alias may move in between
     booster = load_booster(champion.version)
     predictions = make_predictions(new_days, champion, booster)
-    drift = make_drift(features, champion)
+    predictions["backfill"] = get_backfill(predictions["date"], predicted)
+    drift = make_drift(features, champion, train_end)
     logger.info("predictions:\n%s", predictions.to_string())
     logger.info("drift:\n%s", drift.to_string())
 
@@ -74,7 +76,7 @@ def main() -> None:
             f"Day: {latest['date']}",
             f"Forecast: {latest['prediction']:.1f}, HAR-RV {latest['har_rv']:.1f}",
             f"Model version: {champion.version}",
-            f"New days: {len(predictions)}",
+            f"New days: {len(predictions)}, backfill {predictions['backfill'].sum()}",
             f"PSI above threshold: {', '.join(drifted) or 'none'}",
         ],
     )

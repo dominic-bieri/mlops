@@ -22,7 +22,7 @@ Live: [UI](https://sp500-vol-ui-udjtjgs5dq-oa.a.run.app) · [API](https://sp500-
 
 - Feature pipeline: loads SPY and VIX into BigQuery and builds the `features` table with a versioned snapshot, daily ([`src/sp500_vol/features/`](src/sp500_vol/features/))
 - Training pipeline: trains LightGBM on the newest snapshot, registers it in Agent Platform if it beats HAR-RV and is not worse than the current model, monthly ([`src/sp500_vol/training/`](src/sp500_vol/training/))
-- Inference pipeline: forecasts each new feature day with `sp500-vol@champion` into `predictions` and checks drift, after each feature run ([`src/sp500_vol/inference/`](src/sp500_vol/inference/), [ADR 7](docs/adr/0007-inference.md))
+- Inference pipeline: forecasts each feature day after the training days of `sp500-vol@champion`, the first run fills the test period (`backfill`), into `predictions` and checks drift, after each feature run ([`src/sp500_vol/inference/`](src/sp500_vol/inference/), [ADR 7](docs/adr/0007-inference.md))
 - API: FastAPI on Cloud Run, reads `predictions`: `/predict`, `/predictions`, `/model`, `/health`
 - UI: Streamlit on Cloud Run, reads the API ([`ui/app.py`](ui/app.py))
 
