@@ -8,7 +8,8 @@ The UI must be public and cost nothing when nobody looks. An Agent Platform endp
 ## Decision
 
 - Batch job in its own workflow `inference-pipeline`, started by the feature pipeline with `workflow_dispatch` and the commit of its run: own run and badge, same image as the feature run. `workflow_run` is not possible, Google only accepts tokens from `push`, `schedule` and `workflow_dispatch`
-- One row per new feature day in `predictions`, the first run only the newest day
+- One row in `predictions` per feature day after `train_end` of the champion that has no forecast yet: the model has not seen these days. A missed run is caught up
+- Days before the first live forecast are marked `backfill`: the test period, forecast later, so the chart has history. The live MAE leaves them out, the test MAE already covers them
 - Features come from the `features` table, the same values as in training
 - Baselines are fitted at training and saved in `metadata.json` next to the model
 - Drift: PSI per feature, last 60 days against the training days; retraining stays monthly (ADR 6)

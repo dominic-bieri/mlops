@@ -30,6 +30,7 @@ def client(monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
             "horizon_days": 5,
             "model_version": "3",
             "actual": [15.5] * 5 + [np.nan] * 5,
+            "backfill": [None, True] + [False] * 8,
         }
     )
     # rv_5d drifted earlier, only vix in the newest run
@@ -74,6 +75,8 @@ def test_open_predictions_have_no_actual(client: TestClient) -> None:
 
     assert len(rows) == 10
     assert rows[0]["actual"] == 15.5
+    assert rows[0]["backfill"] is False
+    assert rows[1]["backfill"] is True
     assert rows[-1]["actual"] is None
 
 
@@ -82,7 +85,7 @@ def test_model_shows_test_and_live_mae(client: TestClient) -> None:
 
     assert body["run"] == "run-1"
     assert body["test_mae"]["model"] == 2.5
-    assert body["live_days"] == 5
+    assert body["live_days"] == 4
     assert body["live_mae"]["model"] == 0.5
     assert body["live_mae"]["vix_scaled"] == 1.5
     assert body["drifted"] == ["vix"]
