@@ -51,7 +51,7 @@ More details are in the ADRs in #link(repo + "/tree/main/docs/adr")[`docs/adr`].
   Files: #file("README.md"), #file("src/sp500_vol/training/evaluate.py")
 - *B8: Diagram arrow* - Changed \
   Arrow from the BigQuery feature store to the inference pipeline. \
-  Files: #file("docs/media/System_Design.svg")
+  Files: #file("docs/media/System_Design_MS1.svg")
 - *B10: Historical replay test* - Changed \
   A test runs the pipeline day by day for normal days, a market shock and a late VIX. It checks that old features don't change, labels only appear after 5 days and `loaded_at` is set. \
   Files: #file("tests/test_replay.py")
