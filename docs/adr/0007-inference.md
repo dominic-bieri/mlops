@@ -12,11 +12,12 @@ The UI must be public and cost nothing when nobody looks. An Agent Platform endp
 - Features come from the `features` table, the same values as in training
 - Baselines are fitted at training and saved in `metadata.json` next to the model
 - Drift: PSI per feature, last 60 days against the training days, above 0.25 a warning; retraining stays monthly (ADR 6)
-- Live errors in the view `prediction_errors`, once the label is known
+- Live errors: the API joins `predictions` with the label in `features`, once it is known
 - Batch prediction only: the forecast needs no input from the request and changes once a day
 - API with FastAPI on Cloud Run, 0 to 1 instance, serves the newest row of `predictions` and the registry entry of its model version
 - UI with Streamlit as a second Cloud Run service, 0 to 1 instance, only calls the API
 - Deploy on every push to `main`: revision without traffic, smoke test, then all traffic
+- Smoke test checks the commit and a forecast, not the version behind `@champion`: the API shows the version of the newest forecast, after a promotion it differs until the next feature run
 
 ## Consequences
 

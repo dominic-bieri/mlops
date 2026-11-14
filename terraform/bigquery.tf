@@ -294,30 +294,3 @@ resource "google_bigquery_table" "drift" {
     },
   ])
 }
-
-resource "google_bigquery_table" "prediction_errors" {
-  project     = var.project_id
-  dataset_id  = google_bigquery_dataset.sp500_vol.dataset_id
-  table_id    = "prediction_errors"
-  description = "Absolute errors of model and baselines once the label is known."
-
-  deletion_protection = false
-
-  view {
-    use_legacy_sql = false
-    query          = <<-SQL
-      SELECT
-        p.date,
-        p.model_version,
-        f.rv_next_5d AS actual,
-        ABS(p.prediction - f.rv_next_5d) AS model_error,
-        ABS(p.rv_20d - f.rv_next_5d) AS rv_20d_error,
-        ABS(p.har_rv - f.rv_next_5d) AS har_rv_error,
-        ABS(p.vix_scaled - f.rv_next_5d) AS vix_scaled_error
-      FROM `${var.project_id}.${google_bigquery_dataset.sp500_vol.dataset_id}.${google_bigquery_table.predictions.table_id}` AS p
-      JOIN `${var.project_id}.${google_bigquery_dataset.sp500_vol.dataset_id}.${google_bigquery_table.features.table_id}` AS f
-      USING (date)
-      WHERE f.rv_next_5d IS NOT NULL
-    SQL
-  }
-}
