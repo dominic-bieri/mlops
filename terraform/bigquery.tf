@@ -250,6 +250,12 @@ resource "google_bigquery_table" "predictions" {
       mode        = "REQUIRED"
       description = "When the forecast was made (UTC)."
     },
+    {
+      name        = "backfill"
+      type        = "BOOL"
+      mode        = "NULLABLE"
+      description = "Test period, forecast later."
+    },
   ])
 }
 

@@ -25,11 +25,15 @@ def predict(features: pd.DataFrame, booster: lgb.Booster, metadata: dict) -> pd.
     return df.reset_index(drop=True)
 
 
-# the first run skips the history, the model was trained on it
-def get_new_days(features: pd.DataFrame, predicted: set[date]) -> pd.DataFrame:
-    if not predicted:
-        return features[features["date"] == features["date"].max()]
-    return features[features["date"] > max(predicted)].sort_values("date")
+def get_new_days(features: pd.DataFrame, predicted: set[date], train_end: date) -> pd.DataFrame:
+    unseen = features[features["date"] > train_end]
+    missing = [day not in predicted for day in unseen["date"]]
+    return unseen[missing].sort_values("date")
+
+
+def get_backfill(days: pd.Series, predicted: set[date]) -> pd.Series:
+    first_live = min(predicted) if predicted else days.max()
+    return days < first_live
 
 
 def is_stale(newest: date, today: date) -> bool:
