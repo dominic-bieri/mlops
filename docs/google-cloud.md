@@ -164,9 +164,10 @@ After Terraform created the Artifact Registry repository `sp500-vol`.
 gcloud projects add-iam-policy-binding $PROJECT_ID \
   --member="$PRINCIPAL/inference-deploy" --role="roles/run.developer" --condition=None
 
+# repoAdmin, not writer: moving the tag `live` deletes the old one
 gcloud artifacts repositories add-iam-policy-binding sp500-vol \
   --project=$PROJECT_ID --location=europe-west6 \
-  --member="$PRINCIPAL/inference-deploy" --role="roles/artifactregistry.writer"
+  --member="$PRINCIPAL/inference-deploy" --role="roles/artifactregistry.repoAdmin"
 ```
 
 Variables: `GCP_PROJECT_ID`, `GCP_REGION`, `GCP_WORKLOAD_IDENTITY_PROVIDER`, same as `training-pipeline`.
