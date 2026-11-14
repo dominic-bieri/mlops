@@ -51,6 +51,7 @@ class PredictionRow(BaseModel):
     vix_scaled: float
     model_version: str
     actual: float | None
+    backfill: bool
 
 
 class ModelInfo(BaseModel):
@@ -104,8 +105,13 @@ def read_drift() -> pd.DataFrame:
     return read_cached("drift", f"SELECT * FROM `{table('drift')}`")
 
 
+def is_backfill(predictions: pd.DataFrame) -> pd.Series:
+    return predictions["backfill"].fillna(False).astype(bool)
+
+
 def get_live_mae(predictions: pd.DataFrame, version: str) -> tuple[int, dict[str, float | None]]:
-    known = predictions[(predictions["model_version"] == version) & predictions["actual"].notna()]
+    live = predictions[~is_backfill(predictions)]
+    known = live[(live["model_version"] == version) & live["actual"].notna()]
     mae = {}
     for name, column in FORECASTS.items():
         errors = (known[column] - known["actual"]).abs()
@@ -159,7 +165,9 @@ def predict_newest() -> Forecast:
 @app.get("/predictions")
 def predictions() -> list[PredictionRow]:
     # assign copies, the cached frame stays unchanged
-    df = read_predictions().assign(actual=lambda df: df["actual"].map(to_optional))
+    df = read_predictions().assign(
+        actual=lambda df: df["actual"].map(to_optional), backfill=is_backfill
+    )
     return [PredictionRow(**row) for row in df.to_dict("records")]
 
 
