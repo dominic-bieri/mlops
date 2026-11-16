@@ -29,6 +29,7 @@ def client(monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
             "vix": 20.0,
             "horizon_days": 5,
             "model_version": "3",
+            "predicted_at": pd.Timestamp("2000-01-15 15:00", tz="UTC"),
             "actual": [15.5] * 5 + [np.nan] * 5,
             "backfill": [None, True] + [False] * 8,
         }
@@ -66,6 +67,7 @@ def test_predict_newest_day(client: TestClient) -> None:
     assert body["horizon_days"] == 5
     assert body["prediction"] == 15.0
     assert body["features_date"] == "2000-01-14"
+    assert body["predicted_at"] == "2000-01-15T15:00:00Z"
     # fake features are from 2000
     assert body["stale"] is True
 
