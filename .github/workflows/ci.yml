@@ -38,6 +38,10 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # one push at a time, two at once fail with "unknown blob"
+    concurrency:
+      group: docker
+      cancel-in-progress: false
     permissions:
       contents: read
       packages: write
