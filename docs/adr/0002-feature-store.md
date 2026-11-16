@@ -12,6 +12,7 @@ A model must be traceable to the exact data it was trained on, BigQuery time tra
 - Label in the same table, empty for the last 5 days
 - Feature store: the BigQuery `features` table, no extra service (Agent Platform Feature Store would only register the same table)
 - After each build a read-only snapshot, e.g. `features_20261017_141703` (UTC), with the Git commit as description
+- Before a snapshot the features must have at least 5,000 rows and a row from the last 10 days
 - Only GitHub Actions builds a snapshot, local code may not be committed
 - `features` stays the current version for inference
 - Training reads the newest snapshot and logs its name, so it can be trained again on the same data

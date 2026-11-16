@@ -3,7 +3,7 @@ import numpy as np
 from fake_data import make_features
 from sklearn.metrics import mean_absolute_error
 
-from sp500_vol.features.build import FEATURE_COLUMNS, LABEL_COLUMN
+from sp500_vol.common.schema import FEATURE_COLUMNS, LABEL_COLUMN
 from sp500_vol.training.model import fit_model, refit_model
 from sp500_vol.training.train import train_and_evaluate
 

@@ -5,11 +5,16 @@ import numpy as np
 import pandas as pd
 
 from sp500_vol.common.bigquery import BigQueryClient
-from sp500_vol.common.config import (
-    get_git_commit,
-    github_notice,
-    is_github_actions,
-    setup_logging,
+from sp500_vol.common.config import get_git_commit, is_github_actions
+from sp500_vol.common.log import github_notice, setup_logging
+from sp500_vol.common.schema import (
+    FEATURE_COLUMNS,
+    FEATURES_TABLE,
+    HORIZON,
+    LABEL_COLUMN,
+    SNAPSHOT_PREFIX,
+    SP500_TABLE,
+    VIX_TABLE,
 )
 from sp500_vol.features.validate import validate_features
 
@@ -17,23 +22,7 @@ logger = logging.getLogger(__name__)
 
 TRADING_DAYS_PER_YEAR = 252
 RV_WINDOWS = [1, 5, 10, 20, 22, 60]
-HORIZON = 5
 VIX_CHANGE_DAYS = 5
-
-FEATURE_COLUMNS = [
-    "log_return",
-    "abs_log_return",
-    "rv_1d",
-    "rv_5d",
-    "rv_10d",
-    "rv_20d",
-    "rv_22d",
-    "rv_60d",
-    "vix",
-    "vix_change_5d",
-]
-LABEL_COLUMN = "rv_next_5d"
-SNAPSHOT_PREFIX = "features_"
 
 
 # Garman-Klass-Yang-Zhang, formula in ADR 3
@@ -94,8 +83,8 @@ def get_snapshot_name(built_at: datetime) -> str:
 def main() -> None:
     bq = BigQueryClient()
 
-    sp500 = bq.read_table("sp500")
-    vix = bq.read_table("vix")
+    sp500 = bq.read_table(SP500_TABLE)
+    vix = bq.read_table(VIX_TABLE)
     features = build_features(sp500, vix)
     logger.info("features: %d rows", len(features))
 
@@ -104,9 +93,9 @@ def main() -> None:
         return
 
     validate_features(features, datetime.now(UTC).date())
-    bq.replace_all(features, "features")
+    bq.replace_all(features, FEATURES_TABLE)
     snapshot = get_snapshot_name(datetime.now(UTC))
-    bq.create_snapshot("features", snapshot, f"commit {get_git_commit()}")
+    bq.create_snapshot(FEATURES_TABLE, snapshot, f"commit {get_git_commit()}")
     newest = features["date"].max()
     github_notice(
         "Features: new snapshot",

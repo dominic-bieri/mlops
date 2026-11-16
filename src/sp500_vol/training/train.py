@@ -10,17 +10,10 @@ from sklearn.metrics import mean_absolute_error
 
 from sp500_vol.common.baselines import get_baselines
 from sp500_vol.common.bigquery import BigQueryClient
-from sp500_vol.common.config import (
-    get_gcp_project_id,
-    get_gcp_region,
-    get_git_commit,
-    get_image,
-    github_notice,
-    is_github_actions,
-    setup_logging,
-)
+from sp500_vol.common.config import get_git_commit, get_image, is_github_actions
+from sp500_vol.common.log import github_notice, setup_logging
 from sp500_vol.common.registry import MODEL_NAME, ModelRegistry
-from sp500_vol.features.build import FEATURE_COLUMNS, LABEL_COLUMN, SNAPSHOT_PREFIX
+from sp500_vol.common.schema import FEATURE_COLUMNS, LABEL_COLUMN, SNAPSHOT_PREFIX
 from sp500_vol.training.evaluate import get_errors, get_errors_by_year
 from sp500_vol.training.model import fit_model, refit_model
 from sp500_vol.training.split import get_cutoff, split
@@ -122,19 +115,49 @@ def train_and_evaluate(features: pd.DataFrame, snapshot: str) -> TrainingResult:
     return TrainingResult(model, params, metrics, test, errors_by_year, metadata)
 
 
-def track_and_register(result: TrainingResult) -> None:
-    aiplatform.init(
-        project=get_gcp_project_id(),
-        location=get_gcp_region(),
-        experiment=MODEL_NAME,
-        experiment_tensorboard=False,
-    )
-    registry = ModelRegistry()
-    run_name = datetime.now(UTC).strftime("run-%Y%m%d-%H%M%S")
+def register(
+    registry: ModelRegistry, result: TrainingResult, run_name: str, parent: str | None
+) -> str:
     params = result.params
+    test_mae = result.metrics["test_mae"]
+    har_mae = result.metrics["har_rv_test_mae"]
+    description = (
+        f"run {run_name}, commit {params['git_commit']}, snapshot {params['snapshot']}, "
+        f"test MAE {test_mae:.4f}, HAR-RV {har_mae:.4f}"
+    )
+    labels = {
+        "run": run_name,
+        "git_commit": params["git_commit"],
+        "snapshot": params["snapshot"],
+    }
+    return registry.register(result.model, result.metadata, run_name, parent, description, labels)
+
+
+def notify(
+    result: TrainingResult, run_name: str, current_mae: float | None, model_version: str | None
+) -> None:
+    test_mae = result.metrics["test_mae"]
+    har_mae = result.metrics["har_rv_test_mae"]
+    current_text = "none" if current_mae is None else f"{current_mae:.4f}"
+    details = [
+        f"Test MAE: model {test_mae:.4f}, HAR-RV {har_mae:.4f}, champion {current_text}",
+        f"Run: {run_name}",
+        f"Snapshot: {result.params['snapshot']}",
+    ]
+    if model_version is None:
+        github_notice("Training: no new model", ["Champion unchanged", *details])
+    else:
+        github_notice(
+            "Training: new model registered", [f"Version {model_version} is champion", *details]
+        )
+
+
+def track_and_register(result: TrainingResult) -> None:
+    # sets project and region
+    registry = ModelRegistry()
+    aiplatform.init(experiment=MODEL_NAME, experiment_tensorboard=False)
+    run_name = datetime.now(UTC).strftime("run-%Y%m%d-%H%M%S")
     metrics = result.metrics
-    test_mae = metrics["test_mae"]
-    har_mae = metrics["har_rv_test_mae"]
 
     parent = registry.get_parent()
     current = registry.get_champion(parent)
@@ -144,39 +167,17 @@ def track_and_register(result: TrainingResult) -> None:
         # not in the model folder, comes from the model fitted on train only
         errors_path = f"{ERRORS_DIR}/{run_name}/{ERRORS_FILE}"
         errors_uri = registry.upload(errors_path, result.errors_by_year.to_csv())
-        aiplatform.log_params({**params, "errors_by_year": errors_uri})
+        aiplatform.log_params({**result.params, "errors_by_year": errors_uri})
         aiplatform.log_metrics(metrics)
         if current_mae is not None:
             aiplatform.log_metrics({"current_test_mae": current_mae})
 
         model_version: str | None = None
-        if should_register(test_mae, har_mae, current_mae):
-            description = (
-                f"run {run_name}, commit {params['git_commit']}, snapshot {params['snapshot']}, "
-                f"test MAE {test_mae:.4f}, HAR-RV {har_mae:.4f}"
-            )
-            labels = {
-                "run": run_name,
-                "git_commit": params["git_commit"],
-                "snapshot": params["snapshot"],
-            }
-            model_version = registry.register(
-                result.model, result.metadata, run_name, parent, description, labels
-            )
+        if should_register(metrics["test_mae"], metrics["har_rv_test_mae"], current_mae):
+            model_version = register(registry, result, run_name, parent)
         aiplatform.log_params({"model_version": model_version or "none"})
 
-    current_text = "none" if current_mae is None else f"{current_mae:.4f}"
-    details = [
-        f"Test MAE: model {test_mae:.4f}, HAR-RV {har_mae:.4f}, champion {current_text}",
-        f"Run: {run_name}",
-        f"Snapshot: {params['snapshot']}",
-    ]
-    if model_version is None:
-        github_notice("Training: no new model", ["Champion unchanged", *details])
-    else:
-        github_notice(
-            "Training: new model registered", [f"Version {model_version} is champion", *details]
-        )
+    notify(result, run_name, current_mae, model_version)
 
 
 def main() -> None:

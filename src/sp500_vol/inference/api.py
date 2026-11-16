@@ -9,8 +9,8 @@ from pydantic import BaseModel
 
 from sp500_vol.common.bigquery import BigQueryClient
 from sp500_vol.common.config import get_git_commit
-from sp500_vol.common.registry import RegisteredModel, load_registered_model
-from sp500_vol.features.build import LABEL_COLUMN
+from sp500_vol.common.registry import ModelRegistry, RegisteredModel
+from sp500_vol.common.schema import DRIFT_TABLE, FEATURES_TABLE, LABEL_COLUMN, PREDICTIONS_TABLE
 from sp500_vol.inference.predict import is_stale
 
 CACHE_SECONDS = 600
@@ -40,6 +40,7 @@ class Forecast(BaseModel):
     vix_scaled: float
     vix: float
     model_version: str
+    predicted_at: datetime
     stale: bool
 
 
@@ -95,14 +96,14 @@ def read_cached(name: str, sql: str) -> pd.DataFrame:
 
 def read_predictions() -> pd.DataFrame:
     sql = (
-        f"SELECT p.*, f.{LABEL_COLUMN} AS actual FROM `{table('predictions')}` p "
-        f"LEFT JOIN `{table('features')}` f USING (date) ORDER BY date"
+        f"SELECT p.*, f.{LABEL_COLUMN} AS actual FROM `{table(PREDICTIONS_TABLE)}` p "
+        f"LEFT JOIN `{table(FEATURES_TABLE)}` f USING (date) ORDER BY date"
     )
-    return read_cached("predictions", sql)
+    return read_cached(PREDICTIONS_TABLE, sql)
 
 
 def read_drift() -> pd.DataFrame:
-    return read_cached("drift", f"SELECT * FROM `{table('drift')}`")
+    return read_cached(DRIFT_TABLE, f"SELECT * FROM `{table(DRIFT_TABLE)}`")
 
 
 def is_backfill(predictions: pd.DataFrame) -> pd.Series:
@@ -129,7 +130,7 @@ def get_drifted(drift: pd.DataFrame, version: str) -> list[str]:
 # a version never changes
 @lru_cache
 def get_model(version: str) -> RegisteredModel:
-    return load_registered_model(version)
+    return ModelRegistry().load_registered(version)
 
 
 def newest() -> pd.Series:

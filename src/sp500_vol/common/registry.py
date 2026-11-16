@@ -6,7 +6,7 @@ from google.api_core.exceptions import NotFound
 from google.cloud import aiplatform, storage
 
 from sp500_vol.common.config import get_gcp_project_id, get_gcp_region
-from sp500_vol.features.build import FEATURE_COLUMNS
+from sp500_vol.common.schema import FEATURE_COLUMNS
 
 MODEL_NAME = "sp500-vol"
 CHAMPION = "champion"
@@ -16,9 +16,17 @@ MODEL_FILE = "model.txt"
 METADATA_FILE = "metadata.json"
 
 
+@dataclass
+class RegisteredModel:
+    version: str
+    labels: dict[str, str]
+    metadata: dict
+
+
 class ModelRegistry:
     def __init__(self) -> None:
         project = get_gcp_project_id()
+        aiplatform.init(project=project, location=get_gcp_region())
         self.client = storage.Client(project=project)
         # created by Terraform (storage.tf)
         self.bucket = self.client.bucket(f"{project}-models")
@@ -76,32 +84,21 @@ class ModelRegistry:
         )
         return registered.version_id
 
+    # version is a version id or an alias
+    def get_version(self, version: str) -> aiplatform.Model:
+        parent = self.get_parent()
+        if parent is None:
+            raise RuntimeError("no model, run the training pipeline first")
+        return aiplatform.Model(f"{parent}@{version}")
 
-@dataclass
-class RegisteredModel:
-    version: str
-    labels: dict[str, str]
-    metadata: dict
+    def load_registered(self, version: str) -> RegisteredModel:
+        registered = self.get_version(version)
+        metadata = self.load_metadata(registered)
+        return RegisteredModel(registered.version_id, dict(registered.labels), metadata)
 
-
-# version is a version id or an alias
-def get_registered(version: str) -> aiplatform.Model:
-    aiplatform.init(project=get_gcp_project_id(), location=get_gcp_region())
-    parent = ModelRegistry().get_parent()
-    if parent is None:
-        raise RuntimeError("no model, run the training pipeline first")
-    return aiplatform.Model(f"{parent}@{version}")
-
-
-def load_registered_model(version: str) -> RegisteredModel:
-    registered = get_registered(version)
-    metadata = ModelRegistry().load_metadata(registered)
-    return RegisteredModel(registered.version_id, dict(registered.labels), metadata)
-
-
-def load_booster(version: str) -> lgb.Booster:
-    registered = get_registered(version)
-    booster = ModelRegistry().load_model(registered)
-    if booster.feature_name() != FEATURE_COLUMNS:
-        raise RuntimeError(f"model {registered.version_id} has other features")
-    return booster
+    def load_booster(self, version: str) -> lgb.Booster:
+        registered = self.get_version(version)
+        booster = self.load_model(registered)
+        if booster.feature_name() != FEATURE_COLUMNS:
+            raise RuntimeError(f"model {registered.version_id} has other features")
+        return booster
