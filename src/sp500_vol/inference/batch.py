@@ -17,6 +17,7 @@ from sp500_vol.common.registry import (
     load_booster,
     load_registered_model,
 )
+from sp500_vol.common.schema import DRIFT_TABLE, FEATURES_TABLE, PREDICTIONS_TABLE
 from sp500_vol.inference.drift import get_drift
 from sp500_vol.inference.predict import get_backfill, get_new_days, predict
 
@@ -44,10 +45,10 @@ def make_drift(features: pd.DataFrame, champion: RegisteredModel, train_end: dat
 
 def main() -> None:
     bq = BigQueryClient()
-    features = bq.read_table("features")
+    features = bq.read_table(FEATURES_TABLE)
     champion = load_registered_model(CHAMPION)
     train_end = date.fromisoformat(champion.metadata["train_end"])
-    predicted = bq.get_dates("predictions")
+    predicted = bq.get_dates(PREDICTIONS_TABLE)
     new_days = get_new_days(features, predicted, train_end)
     if new_days.empty:
         github_notice("Inference: no new feature day", [f"Newest day: {features['date'].max()}"])
@@ -66,8 +67,8 @@ def main() -> None:
         logger.info("local run, nothing written")
         return
 
-    bq.append(predictions, "predictions")
-    bq.append(drift, "drift")
+    bq.append(predictions, PREDICTIONS_TABLE)
+    bq.append(drift, DRIFT_TABLE)
     latest = predictions.iloc[-1]
     drifted = drift.loc[drift["psi"] > drift["threshold"], "feature"].tolist()
     github_notice(
