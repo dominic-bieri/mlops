@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 from sp500_vol.common.bigquery import BigQueryClient
 from sp500_vol.common.config import get_git_commit
-from sp500_vol.common.registry import RegisteredModel, load_registered_model
+from sp500_vol.common.registry import ModelRegistry, RegisteredModel
 from sp500_vol.common.schema import DRIFT_TABLE, FEATURES_TABLE, LABEL_COLUMN, PREDICTIONS_TABLE
 from sp500_vol.inference.predict import is_stale
 
@@ -129,7 +129,7 @@ def get_drifted(drift: pd.DataFrame, version: str) -> list[str]:
 # a version never changes
 @lru_cache
 def get_model(version: str) -> RegisteredModel:
-    return load_registered_model(version)
+    return ModelRegistry().load_registered(version)
 
 
 def newest() -> pd.Series:
