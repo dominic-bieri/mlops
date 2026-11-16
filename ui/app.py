@@ -43,9 +43,12 @@ def label(name: str) -> str:
 
 
 st.metric("Forecast", f"{forecast['prediction']:.1f} %")
+# 2026-11-14T15:01:30Z -> 2026-11-14 15:01
+predicted_at = forecast["predicted_at"][:16].replace("T", " ")
 st.caption(
     f"Model version {model['model_version']} (trained until {model['train_end']}) · "
-    f"features as of {forecast['features_date']} · VIX {forecast['vix']:.1f} · "
+    f"features as of {forecast['features_date']} · forecast made {predicted_at} UTC · "
+    f"VIX {forecast['vix']:.1f} · "
     f"drift: {', '.join(model['drifted']) or 'none'}"
 )
 if forecast["stale"]:
