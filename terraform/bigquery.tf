@@ -181,7 +181,8 @@ resource "google_bigquery_table" "predictions" {
   table_id    = "predictions"
   description = "Daily forecasts of the inference pipeline, one row per feature day."
 
-  deletion_protection = false
+  # live forecasts can't be made again
+  deletion_protection = true
 
   schema = jsonencode([
     {
