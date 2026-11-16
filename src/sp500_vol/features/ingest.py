@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 
 from sp500_vol.common.bigquery import BigQueryClient
-from sp500_vol.common.config import setup_logging
+from sp500_vol.common.log import setup_logging
 from sp500_vol.common.schema import SP500_TABLE, VIX_TABLE
 from sp500_vol.features.fred_client import FredClient
 from sp500_vol.features.tiingo_client import TiingoClient

@@ -5,12 +5,8 @@ import lightgbm as lgb
 import pandas as pd
 
 from sp500_vol.common.bigquery import BigQueryClient
-from sp500_vol.common.config import (
-    get_git_commit,
-    github_notice,
-    is_github_actions,
-    setup_logging,
-)
+from sp500_vol.common.config import get_git_commit, is_github_actions
+from sp500_vol.common.log import github_notice, setup_logging
 from sp500_vol.common.registry import CHAMPION, ModelRegistry, RegisteredModel
 from sp500_vol.common.schema import DRIFT_TABLE, FEATURES_TABLE, PREDICTIONS_TABLE
 from sp500_vol.inference.drift import get_drift

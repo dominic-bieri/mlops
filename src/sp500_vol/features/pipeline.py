@@ -1,4 +1,4 @@
-from sp500_vol.common.config import setup_logging
+from sp500_vol.common.log import setup_logging
 from sp500_vol.features import build, ingest
 
 

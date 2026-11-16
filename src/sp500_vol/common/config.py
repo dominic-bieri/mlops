@@ -1,4 +1,3 @@
-import logging
 import os
 
 from dotenv import load_dotenv
@@ -36,12 +35,3 @@ def get_git_commit() -> str:
 
 def get_image() -> str:
     return os.environ.get("IMAGE", "local")
-
-
-# shown on the run page, readable without a GitHub login
-def github_notice(title: str, parts: list[str]) -> None:
-    print(f"::notice title={title}::{' · '.join(parts)}")
-
-
-def setup_logging() -> None:
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
