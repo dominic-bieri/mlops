@@ -11,12 +11,7 @@ from sp500_vol.common.config import (
     is_github_actions,
     setup_logging,
 )
-from sp500_vol.common.registry import (
-    CHAMPION,
-    RegisteredModel,
-    load_booster,
-    load_registered_model,
-)
+from sp500_vol.common.registry import CHAMPION, ModelRegistry, RegisteredModel
 from sp500_vol.common.schema import DRIFT_TABLE, FEATURES_TABLE, PREDICTIONS_TABLE
 from sp500_vol.inference.drift import get_drift
 from sp500_vol.inference.predict import get_backfill, get_new_days, predict
@@ -46,7 +41,8 @@ def make_drift(features: pd.DataFrame, champion: RegisteredModel, train_end: dat
 def main() -> None:
     bq = BigQueryClient()
     features = bq.read_table(FEATURES_TABLE)
-    champion = load_registered_model(CHAMPION)
+    registry = ModelRegistry()
+    champion = registry.load_registered(CHAMPION)
     train_end = date.fromisoformat(champion.metadata["train_end"])
     predicted = bq.get_dates(PREDICTIONS_TABLE)
     new_days = get_new_days(features, predicted, train_end)
@@ -55,7 +51,7 @@ def main() -> None:
         return
 
     # by version id, the alias may move in between
-    booster = load_booster(champion.version)
+    booster = registry.load_booster(champion.version)
     predictions = make_predictions(new_days, champion, booster)
     predictions["backfill"] = get_backfill(predictions["date"], predicted)
     drift = make_drift(features, champion, train_end)

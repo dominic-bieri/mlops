@@ -11,8 +11,6 @@ from sklearn.metrics import mean_absolute_error
 from sp500_vol.common.baselines import get_baselines
 from sp500_vol.common.bigquery import BigQueryClient
 from sp500_vol.common.config import (
-    get_gcp_project_id,
-    get_gcp_region,
     get_git_commit,
     get_image,
     github_notice,
@@ -123,13 +121,9 @@ def train_and_evaluate(features: pd.DataFrame, snapshot: str) -> TrainingResult:
 
 
 def track_and_register(result: TrainingResult) -> None:
-    aiplatform.init(
-        project=get_gcp_project_id(),
-        location=get_gcp_region(),
-        experiment=MODEL_NAME,
-        experiment_tensorboard=False,
-    )
+    # sets project and region
     registry = ModelRegistry()
+    aiplatform.init(experiment=MODEL_NAME, experiment_tensorboard=False)
     run_name = datetime.now(UTC).strftime("run-%Y%m%d-%H%M%S")
     params = result.params
     metrics = result.metrics
