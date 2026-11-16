@@ -40,6 +40,7 @@ class Forecast(BaseModel):
     vix_scaled: float
     vix: float
     model_version: str
+    predicted_at: datetime
     stale: bool
 
 
