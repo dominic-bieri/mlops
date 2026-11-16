@@ -5,18 +5,10 @@ import lightgbm as lgb
 import pandas as pd
 
 from sp500_vol.common.bigquery import BigQueryClient
-from sp500_vol.common.config import (
-    get_git_commit,
-    github_notice,
-    is_github_actions,
-    setup_logging,
-)
-from sp500_vol.common.registry import (
-    CHAMPION,
-    RegisteredModel,
-    load_booster,
-    load_registered_model,
-)
+from sp500_vol.common.config import get_git_commit, is_github_actions
+from sp500_vol.common.log import github_notice, setup_logging
+from sp500_vol.common.registry import CHAMPION, ModelRegistry, RegisteredModel
+from sp500_vol.common.schema import DRIFT_TABLE, FEATURES_TABLE, PREDICTIONS_TABLE
 from sp500_vol.inference.drift import get_drift
 from sp500_vol.inference.predict import get_backfill, get_new_days, predict
 
@@ -44,17 +36,18 @@ def make_drift(features: pd.DataFrame, champion: RegisteredModel, train_end: dat
 
 def main() -> None:
     bq = BigQueryClient()
-    features = bq.read_table("features")
-    champion = load_registered_model(CHAMPION)
+    features = bq.read_table(FEATURES_TABLE)
+    registry = ModelRegistry()
+    champion = registry.load_registered(CHAMPION)
     train_end = date.fromisoformat(champion.metadata["train_end"])
-    predicted = bq.get_dates("predictions")
+    predicted = bq.get_dates(PREDICTIONS_TABLE)
     new_days = get_new_days(features, predicted, train_end)
     if new_days.empty:
         github_notice("Inference: no new feature day", [f"Newest day: {features['date'].max()}"])
         return
 
     # by version id, the alias may move in between
-    booster = load_booster(champion.version)
+    booster = registry.load_booster(champion.version)
     predictions = make_predictions(new_days, champion, booster)
     predictions["backfill"] = get_backfill(predictions["date"], predicted)
     drift = make_drift(features, champion, train_end)
@@ -66,8 +59,8 @@ def main() -> None:
         logger.info("local run, nothing written")
         return
 
-    bq.append(predictions, "predictions")
-    bq.append(drift, "drift")
+    bq.append(predictions, PREDICTIONS_TABLE)
+    bq.append(drift, DRIFT_TABLE)
     latest = predictions.iloc[-1]
     drifted = drift.loc[drift["psi"] > drift["threshold"], "feature"].tolist()
     github_notice(

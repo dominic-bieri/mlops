@@ -2,11 +2,9 @@ import pandas as pd
 import pytest
 from fake_data import make_data
 
+from sp500_vol.common.schema import FEATURE_COLUMNS, HORIZON, LABEL_COLUMN
 from sp500_vol.features import build
 from sp500_vol.features.build import (
-    FEATURE_COLUMNS,
-    HORIZON,
-    LABEL_COLUMN,
     RV_WINDOWS,
     build_features,
     build_spy_features,

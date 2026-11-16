@@ -7,7 +7,7 @@ from fake_data import make_features
 from google.api_core.exceptions import NotFound
 from sklearn.metrics import mean_absolute_error
 
-from sp500_vol.features.build import FEATURE_COLUMNS, LABEL_COLUMN
+from sp500_vol.common.schema import FEATURE_COLUMNS, LABEL_COLUMN
 from sp500_vol.training.model import refit_model
 from sp500_vol.training.train import (
     MAX_MODEL_AGE,

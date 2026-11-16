@@ -1,7 +1,7 @@
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 
-from sp500_vol.features.build import LABEL_COLUMN
+from sp500_vol.common.schema import LABEL_COLUMN
 
 HAR_COLUMNS = ["rv_1d", "rv_5d", "rv_22d"]
 
