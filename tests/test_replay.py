@@ -4,7 +4,8 @@ import pandas as pd
 import pytest
 from fake_data import make_data
 
-from sp500_vol.features.build import FEATURE_COLUMNS, HORIZON, LABEL_COLUMN, build_features
+from sp500_vol.common.schema import FEATURE_COLUMNS, HORIZON, LABEL_COLUMN
+from sp500_vol.features.build import build_features
 from sp500_vol.features.ingest import only_new
 
 BACKFILL_DAYS = 65

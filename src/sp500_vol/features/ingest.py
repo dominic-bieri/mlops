@@ -5,7 +5,8 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 
 from sp500_vol.common.bigquery import BigQueryClient
-from sp500_vol.common.config import setup_logging
+from sp500_vol.common.log import setup_logging
+from sp500_vol.common.schema import SP500_TABLE, VIX_TABLE
 from sp500_vol.features.fred_client import FredClient
 from sp500_vol.features.tiingo_client import TiingoClient
 from sp500_vol.features.validate import validate_spy, validate_vix
@@ -51,8 +52,8 @@ def main() -> None:
     end = get_end(datetime.now(UTC))
     loaded_at = pd.Timestamp.now(tz="UTC")
 
-    vix_dates = bq.get_dates("vix")
-    sp500_dates = bq.get_dates("sp500")
+    vix_dates = bq.get_dates(VIX_TABLE)
+    sp500_dates = bq.get_dates(SP500_TABLE)
     vix_start = get_start(max(vix_dates, default=None))
     sp500_start = get_start(max(sp500_dates, default=None))
 
@@ -62,8 +63,8 @@ def main() -> None:
     validate_vix(vix)
     validate_spy(sp500)
 
-    append_new(bq, vix, "vix", vix_dates, loaded_at)
-    append_new(bq, sp500, "sp500", sp500_dates, loaded_at)
+    append_new(bq, vix, VIX_TABLE, vix_dates, loaded_at)
+    append_new(bq, sp500, SP500_TABLE, sp500_dates, loaded_at)
 
 
 if __name__ == "__main__":
