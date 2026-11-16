@@ -24,7 +24,7 @@ jobs:
           lfs: true
           persist-credentials: false
 
-      - uses: typst-community/setup-typst@v5.3.1
+      - uses: typst-community/setup-typst@v5.3.2
 
       - name: Compile *.typ files
         run: |
