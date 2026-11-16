@@ -14,7 +14,7 @@ workflows:
         - 'google-github-actions/auth@v3.0.0'
     '.github/workflows/render-pdf.yml':
         - 'actions/checkout@v7.0.1'
-        - 'typst-community/setup-typst@v5.3.1'
+        - 'typst-community/setup-typst@v5.3.2'
     '.github/workflows/terraform.yml':
         - 'actions/checkout@v7.0.1'
         - 'google-github-actions/auth@v3.0.0'
@@ -43,8 +43,8 @@ dependencies:
         commit: 'sha1-dfe3c3f87815947d99a8997f908cb6525fc44e9e'
         owner_id: 761456
         repo_id: 258271226
-    'typst-community/setup-typst@v5.3.1':
-        ref: 'v5.3.1'
-        commit: 'sha1-6a2cfaf0b28d636b00148f965e315bae81079aaa'
+    'typst-community/setup-typst@v5.3.2':
+        ref: 'v5.3.2'
+        commit: 'sha1-00ad6338f0b34724ea002136bfb701a6c18585b0'
         owner_id: 144882637
         repo_id: 625450644
