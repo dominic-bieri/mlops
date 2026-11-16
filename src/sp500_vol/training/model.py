@@ -1,7 +1,7 @@
 import lightgbm as lgb
 import pandas as pd
 
-from sp500_vol.features.build import FEATURE_COLUMNS, LABEL_COLUMN
+from sp500_vol.common.schema import FEATURE_COLUMNS, LABEL_COLUMN
 
 MAX_TREES = 2000
 

@@ -4,7 +4,7 @@ import lightgbm as lgb
 import pandas as pd
 
 from sp500_vol.common.baselines import predict_har_rv, predict_vix_scaled
-from sp500_vol.features.build import FEATURE_COLUMNS, HORIZON
+from sp500_vol.common.schema import FEATURE_COLUMNS, HORIZON
 
 # a weekend plus a Monday holiday, a day arrives the next morning
 MAX_AGE_DAYS = 5

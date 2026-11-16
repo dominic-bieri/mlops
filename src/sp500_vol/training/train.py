@@ -20,7 +20,7 @@ from sp500_vol.common.config import (
     setup_logging,
 )
 from sp500_vol.common.registry import MODEL_NAME, ModelRegistry
-from sp500_vol.features.build import FEATURE_COLUMNS, LABEL_COLUMN, SNAPSHOT_PREFIX
+from sp500_vol.common.schema import FEATURE_COLUMNS, LABEL_COLUMN, SNAPSHOT_PREFIX
 from sp500_vol.training.evaluate import get_errors, get_errors_by_year
 from sp500_vol.training.model import fit_model, refit_model
 from sp500_vol.training.split import get_cutoff, split

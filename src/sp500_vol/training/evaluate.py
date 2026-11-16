@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 
 from sp500_vol.common.baselines import predict_har_rv, predict_vix_scaled
-from sp500_vol.features.build import FEATURE_COLUMNS, LABEL_COLUMN
+from sp500_vol.common.schema import FEATURE_COLUMNS, LABEL_COLUMN
 
 VIX_STRESSED = 20
 

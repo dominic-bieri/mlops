@@ -3,7 +3,7 @@ from datetime import date
 import numpy as np
 import pandas as pd
 
-from sp500_vol.features.build import FEATURE_COLUMNS
+from sp500_vol.common.schema import FEATURE_COLUMNS
 
 BINS = 10
 CURRENT_DAYS = 60

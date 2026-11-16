@@ -6,7 +6,7 @@ from google.api_core.exceptions import NotFound
 from google.cloud import aiplatform, storage
 
 from sp500_vol.common.config import get_gcp_project_id, get_gcp_region
-from sp500_vol.features.build import FEATURE_COLUMNS
+from sp500_vol.common.schema import FEATURE_COLUMNS
 
 MODEL_NAME = "sp500-vol"
 CHAMPION = "champion"
