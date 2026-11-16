@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from fake_data import make_features
 
-from sp500_vol.features.build import FEATURE_COLUMNS
+from sp500_vol.common.schema import FEATURE_COLUMNS
 from sp500_vol.inference.drift import CURRENT_DAYS, get_drift, get_threshold, psi
 
 

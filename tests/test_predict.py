@@ -6,7 +6,7 @@ from fake_data import make_features
 from sklearn.linear_model import LinearRegression
 
 from sp500_vol.common.baselines import HAR_COLUMNS, get_baselines
-from sp500_vol.features.build import LABEL_COLUMN
+from sp500_vol.common.schema import LABEL_COLUMN
 from sp500_vol.inference.predict import get_backfill, get_new_days, is_stale, predict
 from sp500_vol.training.model import refit_model
 from sp500_vol.training.train import train_and_evaluate

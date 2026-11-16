@@ -2,7 +2,7 @@ from datetime import date
 
 import pandas as pd
 
-from sp500_vol.features.build import HORIZON, LABEL_COLUMN
+from sp500_vol.common.schema import HORIZON, LABEL_COLUMN
 
 TEST_MONTHS = 12
 VAL_MONTHS = 24
