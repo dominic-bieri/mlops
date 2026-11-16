@@ -28,6 +28,22 @@ Live: [UI](https://sp500-vol-ui-udjtjgs5dq-oa.a.run.app) · [API](https://sp500-
 
 Batch prediction: the forecast needs no input from the request and changes once a day, so only the batch job runs the model; the API serves its rows.
 
+Features, label and table names are defined once in [`src/sp500_vol/common/schema.py`](src/sp500_vol/common/schema.py), used by all three pipelines.
+
+## Module requirements
+
+| Requirement | Where |
+|---|---|
+| Live data, backfill | [`features/ingest.py`](src/sp500_vol/features/ingest.py), [ADR 1](docs/adr/0001-raw-data.md) |
+| Features and feature store | [`features/build.py`](src/sp500_vol/features/build.py), BigQuery `features` with snapshots, [ADR 2](docs/adr/0002-feature-store.md) |
+| Training, no leakage | [`training/split.py`](src/sp500_vol/training/split.py), [`training/model.py`](src/sp500_vol/training/model.py), [ADR 6](docs/adr/0006-training-and-retraining.md) |
+| Experiment tracking, model registry | Agent Platform, [`training/train.py`](src/sp500_vol/training/train.py), [`common/registry.py`](src/sp500_vol/common/registry.py) |
+| Scheduled runs, retraining | [workflows](.github/workflows/) started by cron-job.org, [ADR 5](docs/adr/0005-issue-time-and-label-maturity.md) |
+| Inference, UI, cloud deploy | [`inference/`](src/sp500_vol/inference/), [`ui/app.py`](ui/app.py), deploy job in [`ci.yml`](.github/workflows/ci.yml), [ADR 7](docs/adr/0007-inference.md) |
+| Model version, drift | `/health`, `/model`, [`inference/drift.py`](src/sp500_vol/inference/drift.py) |
+| Tests, Docker, pinned versions | [`tests/`](tests/), [`Dockerfile`](Dockerfile), [`uv.lock`](uv.lock) |
+| Infrastructure | [`terraform/`](terraform/), [`docs/google-cloud.md`](docs/google-cloud.md) |
+
 ## Pipeline results
 
 Each run shows its result on its run page, also without a GitHub login: open a run from the badges above, see *Annotations*.
@@ -50,7 +66,7 @@ Each run shows its result on its run page, also without a GitHub login: open a r
 
 ## Requirements
 
-- [Git LFS](https://git-lfs.com)
+- [Git LFS](https://git-lfs.com) (only for the diagrams)
 - [uv](https://docs.astral.sh/uv/)
 - [gcloud CLI](https://cloud.google.com/sdk/docs/install)
 - [Terraform](https://developer.hashicorp.com/terraform/install)
