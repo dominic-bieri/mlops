@@ -1,6 +1,11 @@
+from datetime import UTC, datetime
+
+import lightgbm as lgb
 import numpy as np
 import pandas as pd
 
+from sp500_vol.common.baselines import get_baselines
+from sp500_vol.common.registry import RegisteredModel
 from sp500_vol.common.schema import FEATURE_COLUMNS, LABEL_COLUMN
 
 DAYS = 100
@@ -37,3 +42,16 @@ def make_features(rows: int, seed: int, start: str = "2000-01-03") -> pd.DataFra
     noise = rng.normal(0, 1, rows)
     df[LABEL_COLUMN] = 0.9 * df["rv_5d"] + noise
     return df
+
+
+class FakeRegistry:
+    def __init__(self, features: pd.DataFrame) -> None:
+        train_days = features.iloc[:400]
+        model = lgb.LGBMRegressor(n_estimators=30, verbose=-1)
+        booster = model.fit(train_days[FEATURE_COLUMNS], train_days[LABEL_COLUMN]).booster_
+        metadata = {"train_end": str(train_days["date"].max()), **get_baselines(train_days)}
+        created = datetime.now(UTC)
+        self.champion = RegisteredModel("3", {"run": "run-1"}, created, metadata, booster)
+
+    def load(self, version: str) -> RegisteredModel | None:
+        return self.champion

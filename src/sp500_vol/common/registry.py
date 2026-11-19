@@ -1,5 +1,7 @@
 import json
+import logging
 from dataclasses import dataclass
+from datetime import datetime
 
 import lightgbm as lgb
 from google.api_core.exceptions import NotFound
@@ -7,6 +9,8 @@ from google.cloud import aiplatform, storage
 
 from sp500_vol.common.config import get_gcp_project_id, get_gcp_region
 from sp500_vol.common.schema import FEATURE_COLUMNS
+
+logger = logging.getLogger(__name__)
 
 MODEL_NAME = "sp500-vol"
 CHAMPION = "champion"
@@ -20,7 +24,9 @@ METADATA_FILE = "metadata.json"
 class RegisteredModel:
     version: str
     labels: dict[str, str]
+    created: datetime
     metadata: dict
+    booster: lgb.Booster
 
 
 class ModelRegistry:
@@ -31,43 +37,35 @@ class ModelRegistry:
         # created by Terraform (storage.tf)
         self.bucket = self.client.bucket(f"{project}-models")
 
-    def get_parent(self) -> str | None:
-        models = aiplatform.Model.list(filter=f'display_name="{MODEL_NAME}"')
-        if not models:
-            return None
-        if len(models) > 1:
-            raise RuntimeError(f"{len(models)} models named {MODEL_NAME}, keep one")
-        return models[0].resource_name
-
-    def get_champion(self, parent: str | None) -> aiplatform.Model | None:
+    # version is a version id or an alias, None if no usable model
+    def load(self, version: str) -> RegisteredModel | None:
+        parent = self.get_parent()
         if parent is None:
+            logger.info("no model %s", MODEL_NAME)
             return None
         try:
-            return aiplatform.Model(f"{parent}@{CHAMPION}")
+            registered = aiplatform.Model(f"{parent}@{version}")
+            metadata = json.loads(self.download(registered, METADATA_FILE))
         except NotFound:
+            logger.info("model %s@%s or its metadata not found", MODEL_NAME, version)
             return None
-
-    def load_model(self, registered: aiplatform.Model) -> lgb.Booster:
-        return lgb.Booster(model_str=self.download(registered, MODEL_FILE))
-
-    def load_metadata(self, registered: aiplatform.Model) -> dict:
-        return json.loads(self.download(registered, METADATA_FILE))
-
-    def download(self, registered: aiplatform.Model, file: str) -> str:
-        blob = storage.Blob.from_uri(f"{registered.uri}/{file}", client=self.client)
-        return blob.download_as_text()
-
-    def upload(self, path: str, text: str) -> str:
-        blob = self.bucket.blob(path)
-        blob.upload_from_string(text)
-        return f"gs://{self.bucket.name}/{blob.name}"
+        booster = lgb.Booster(model_str=self.download(registered, MODEL_FILE))
+        if booster.feature_name() != FEATURE_COLUMNS:
+            logger.info("model %s has other features", registered.version_id)
+            return None
+        return RegisteredModel(
+            registered.version_id,
+            dict(registered.labels),
+            registered.version_create_time,
+            metadata,
+            booster,
+        )
 
     def register(
         self,
         model: lgb.LGBMRegressor,
         metadata: dict,
         run_name: str,
-        parent: str | None,
         description: str,
         labels: dict[str, str],
     ) -> str:
@@ -77,28 +75,26 @@ class ModelRegistry:
             display_name=MODEL_NAME,
             artifact_uri=f"gs://{self.bucket.name}/{run_name}",
             serving_container_image_uri=SERVING_IMAGE,
-            parent_model=parent,
+            parent_model=self.get_parent(),
             version_aliases=[CHAMPION],
             version_description=description,
             labels=labels,
         )
         return registered.version_id
 
-    # version is a version id or an alias
-    def get_version(self, version: str) -> aiplatform.Model:
-        parent = self.get_parent()
-        if parent is None:
-            raise RuntimeError("no model, run the training pipeline first")
-        return aiplatform.Model(f"{parent}@{version}")
+    def upload(self, path: str, text: str) -> str:
+        blob = self.bucket.blob(path)
+        blob.upload_from_string(text)
+        return f"gs://{self.bucket.name}/{blob.name}"
 
-    def load_registered(self, version: str) -> RegisteredModel:
-        registered = self.get_version(version)
-        metadata = self.load_metadata(registered)
-        return RegisteredModel(registered.version_id, dict(registered.labels), metadata)
+    def get_parent(self) -> str | None:
+        models = aiplatform.Model.list(filter=f'display_name="{MODEL_NAME}"')
+        if not models:
+            return None
+        if len(models) > 1:
+            raise RuntimeError(f"{len(models)} models named {MODEL_NAME}, keep one")
+        return models[0].resource_name
 
-    def load_booster(self, version: str) -> lgb.Booster:
-        registered = self.get_version(version)
-        booster = self.load_model(registered)
-        if booster.feature_name() != FEATURE_COLUMNS:
-            raise RuntimeError(f"model {registered.version_id} has other features")
-        return booster
+    def download(self, registered: aiplatform.Model, file: str) -> str:
+        blob = storage.Blob.from_uri(f"{registered.uri}/{file}", client=self.client)
+        return blob.download_as_text()

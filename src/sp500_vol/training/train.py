@@ -4,7 +4,6 @@ from datetime import UTC, datetime, timedelta
 
 import lightgbm as lgb
 import pandas as pd
-from google.api_core.exceptions import NotFound
 from google.cloud import aiplatform
 from sklearn.metrics import mean_absolute_error
 
@@ -12,7 +11,7 @@ from sp500_vol.common.baselines import get_baselines
 from sp500_vol.common.bigquery import BigQueryClient
 from sp500_vol.common.config import get_git_commit, get_image, is_github_actions
 from sp500_vol.common.log import github_notice, setup_logging
-from sp500_vol.common.registry import MODEL_NAME, ModelRegistry
+from sp500_vol.common.registry import CHAMPION, MODEL_NAME, ModelRegistry, RegisteredModel
 from sp500_vol.common.schema import FEATURE_COLUMNS, LABEL_COLUMN, SNAPSHOT_PREFIX
 from sp500_vol.training.evaluate import get_errors, get_errors_by_year
 from sp500_vol.training.model import fit_model, refit_model
@@ -35,28 +34,15 @@ class TrainingResult:
     metadata: dict
 
 
-def get_current_mae(
-    registry: ModelRegistry, current: aiplatform.Model | None, test: pd.DataFrame
-) -> float | None:
+def get_current_mae(current: RegisteredModel | None, test: pd.DataFrame) -> float | None:
     if current is None:
         logger.info("no current model, only HAR-RV counts")
         return None
-    age = datetime.now(UTC) - current.version_create_time
+    age = datetime.now(UTC) - current.created
     if age > MAX_MODEL_AGE:
         logger.info("current model is %d days old, only HAR-RV counts", age.days)
         return None
-
-    booster = registry.load_model(current)
-    if booster.feature_name() != FEATURE_COLUMNS:
-        logger.info("current model has other features, only HAR-RV counts")
-        return None
-    try:
-        registry.load_metadata(current)
-    except NotFound:
-        logger.info("current model has no metadata, only HAR-RV counts")
-        return None
-
-    prediction = booster.predict(test[FEATURE_COLUMNS])
+    prediction = current.booster.predict(test[FEATURE_COLUMNS])
     return mean_absolute_error(test[LABEL_COLUMN], prediction)
 
 
@@ -115,9 +101,7 @@ def train_and_evaluate(features: pd.DataFrame, snapshot: str) -> TrainingResult:
     return TrainingResult(model, params, metrics, test, errors_by_year, metadata)
 
 
-def register(
-    registry: ModelRegistry, result: TrainingResult, run_name: str, parent: str | None
-) -> str:
+def register(registry: ModelRegistry, result: TrainingResult, run_name: str) -> str:
     params = result.params
     test_mae = result.metrics["test_mae"]
     har_mae = result.metrics["har_rv_test_mae"]
@@ -130,7 +114,7 @@ def register(
         "git_commit": params["git_commit"],
         "snapshot": params["snapshot"],
     }
-    return registry.register(result.model, result.metadata, run_name, parent, description, labels)
+    return registry.register(result.model, result.metadata, run_name, description, labels)
 
 
 def notify(
@@ -159,9 +143,7 @@ def track_and_register(result: TrainingResult) -> None:
     run_name = datetime.now(UTC).strftime("run-%Y%m%d-%H%M%S")
     metrics = result.metrics
 
-    parent = registry.get_parent()
-    current = registry.get_champion(parent)
-    current_mae = get_current_mae(registry, current, result.test)
+    current_mae = get_current_mae(registry.load(CHAMPION), result.test)
 
     with aiplatform.start_run(run_name):
         # not in the model folder, comes from the model fitted on train only
@@ -174,7 +156,7 @@ def track_and_register(result: TrainingResult) -> None:
 
         model_version: str | None = None
         if should_register(metrics["test_mae"], metrics["har_rv_test_mae"], current_mae):
-            model_version = register(registry, result, run_name, parent)
+            model_version = register(registry, result, run_name)
         aiplatform.log_params({"model_version": model_version or "none"})
 
     notify(result, run_name, current_mae, model_version)
