@@ -34,7 +34,16 @@ with st.spinner("Loading, the service may need a few seconds to wake up."):
     model = get("/model")
     rows = pd.DataFrame(
         get("/predictions"),
-        columns=["date", "prediction", "har_rv", "rv_20d", "vix_scaled", "actual", "backfill"],
+        columns=[
+            "date",
+            "prediction",
+            "har_rv",
+            "rv_20d",
+            "vix_scaled",
+            "actual",
+            "backfill",
+            "model_version",
+        ],
     )
 
 
@@ -55,22 +64,11 @@ if forecast["stale"]:
     st.warning("Data is older than expected, the feature pipeline may have failed.")
 
 chart = rows.rename(columns={"prediction": "model"}).set_index(pd.to_datetime(rows["date"]))
-if len(chart) > 1:
-    dates = list(chart.index.date)
-    preset = st.segmented_control("Range", list(PRESETS), default="3 months")
-    days = PRESETS.get(preset) or len(dates)
-    start, end = st.slider(
-        "Range",
-        min_value=dates[0],
-        max_value=dates[-1],
-        value=(dates[max(len(dates) - days, 0)], dates[-1]),
-        key=f"range-{preset}",
-        format="YYYY-MM-DD",
-        label_visibility="collapsed",
-    )
-    chart = chart.loc[pd.Timestamp(start) : pd.Timestamp(end)]
+preset = st.segmented_control("Range", list(PRESETS), default="3 months")
+if days := PRESETS.get(preset):
+    chart = chart.tail(days)
 lines = st.pills(
-    "Lines", list(LINES), selection_mode="multi", default=list(LINES), format_func=label
+    "Lines", list(LINES), selection_mode="multi", default=["model", "actual"], format_func=label
 )
 if chart.empty:
     st.info("No forecasts yet, the first comes with the next feature run.")
@@ -83,14 +81,19 @@ elif lines:
 else:
     st.info("Select at least one line.")
 
+is_live = ~rows["backfill"].astype(bool)
+live = rows[is_live & (rows["model_version"] == model["model_version"])]
 mae = pd.DataFrame(
     [model["test_mae"], model["live_mae"]],
-    index=["Test (12 months after training)", f"Live ({model['live_days']} days)"],
+    index=[
+        "Test (12 months after training)",
+        f"Live ({model['live_days']} of {len(live)} forecasts evaluated)",
+    ],
 )
 forecasts = [name for name in LINES if name != "actual"]
 st.table(mae[forecasts].rename(columns=label).style.format("{:.2f}", na_rep="–"))
 
-first_live = rows.loc[~rows["backfill"].astype(bool), "date"].min()
+first_live = rows.loc[is_live, "date"].min()
 st.caption(
     "Annualized volatility of SPY in percent, forecast for the next 5 trading days, the actual "
     f"value is known 5 trading days later. Live since {first_live}, before: test period, forecast "
