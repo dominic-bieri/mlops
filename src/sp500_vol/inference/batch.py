@@ -10,9 +10,19 @@ from sp500_vol.common.log import github_notice, setup_logging
 from sp500_vol.common.registry import CHAMPION, ModelRegistry, RegisteredModel
 from sp500_vol.common.schema import DRIFT_TABLE, FEATURES_TABLE, HORIZON, PREDICTIONS_TABLE
 from sp500_vol.inference.drift import get_drift
-from sp500_vol.inference.predict import get_backfill, get_new_days
 
 logger = logging.getLogger(__name__)
+
+
+def get_new_days(features: pd.DataFrame, predicted: set[date], train_end: date) -> pd.DataFrame:
+    unseen = features[features["date"] > train_end]
+    missing = [day not in predicted for day in unseen["date"]]
+    return unseen[missing].sort_values("date")
+
+
+def get_backfill(days: pd.Series, predicted: set[date]) -> pd.Series:
+    first_live = min(predicted) if predicted else days.max()
+    return days < first_live
 
 
 def make_predictions(new_days: pd.DataFrame, champion: RegisteredModel) -> pd.DataFrame:
