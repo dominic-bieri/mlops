@@ -6,27 +6,23 @@ import requests
 
 from sp500_vol.common.config import get_tiingo_api_key
 
+BASE_URL = "https://api.tiingo.com/tiingo/daily"
 
-class TiingoClient:
-    BASE_URL = "https://api.tiingo.com/tiingo/daily"
 
-    def __init__(self) -> None:
-        self.api_key = get_tiingo_api_key()
+def fetch_spy(start: date, end: date) -> pd.DataFrame:
+    url = f"{BASE_URL}/SPY/prices"
+    params = {
+        "startDate": start.isoformat(),
+        "endDate": end.isoformat(),
+    }
+    # header keeps token out of logs
+    headers = {"Authorization": f"Token {get_tiingo_api_key()}"}
 
-    def fetch_spy(self, start: date, end: date) -> pd.DataFrame:
-        url = f"{self.BASE_URL}/SPY/prices"
-        params = {
-            "startDate": start.isoformat(),
-            "endDate": end.isoformat(),
-        }
-        # header keeps token out of logs
-        headers = {"Authorization": f"Token {self.api_key}"}
+    response = requests.get(url, params=params, headers=headers, timeout=30)
+    response.raise_for_status()
 
-        response = requests.get(url, params=params, headers=headers, timeout=30)
-        response.raise_for_status()
-
-        data = response.json()
-        return to_spy_frame(data)
+    data = response.json()
+    return to_spy_frame(data)
 
 
 def to_spy_frame(prices: list[dict[str, Any]]) -> pd.DataFrame:
