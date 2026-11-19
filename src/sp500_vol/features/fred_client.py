@@ -5,38 +5,34 @@ import requests
 
 from sp500_vol.common.config import get_fred_api_key
 
+BASE_URL = "https://api.stlouisfed.org/fred/series/observations"
 
-class FredClient:
-    BASE_URL = "https://api.stlouisfed.org/fred/series/observations"
 
-    def __init__(self) -> None:
-        self.api_key = get_fred_api_key()
+def fetch_vix(start: date, end: date) -> pd.DataFrame:
+    params = {
+        "series_id": "VIXCLS",
+        "api_key": get_fred_api_key(),
+        "file_type": "json",
+        "observation_start": start.isoformat(),
+        "observation_end": end.isoformat(),
+    }
 
-    def fetch_vix(self, start: date, end: date) -> pd.DataFrame:
-        params = {
-            "series_id": "VIXCLS",
-            "api_key": self.api_key,
-            "file_type": "json",
-            "observation_start": start.isoformat(),
-            "observation_end": end.isoformat(),
-        }
+    # own errors, URL contains API key
+    try:
+        response = requests.get(BASE_URL, params=params, timeout=30)
+    except requests.RequestException as e:
+        error_type = type(e).__name__
+        raise RuntimeError(f"FRED request failed: {error_type}") from None
+    if not response.ok:
+        raise RuntimeError(f"FRED request failed with status {response.status_code}")
 
-        # own errors, URL contains API key
-        try:
-            response = requests.get(self.BASE_URL, params=params, timeout=30)
-        except requests.RequestException as e:
-            error_type = type(e).__name__
-            raise RuntimeError(f"FRED request failed: {error_type}") from None
-        if not response.ok:
-            raise RuntimeError(f"FRED request failed with status {response.status_code}")
-
-        try:
-            observations = response.json()["observations"]
-        except ValueError, KeyError, TypeError:
-            observations = None
-        if not isinstance(observations, list):
-            raise RuntimeError("FRED returned no observations")
-        return to_vix_frame(observations)
+    try:
+        observations = response.json()["observations"]
+    except ValueError, KeyError, TypeError:
+        observations = None
+    if not isinstance(observations, list):
+        raise RuntimeError("FRED returned no observations")
+    return to_vix_frame(observations)
 
 
 def to_vix_frame(observations: list[dict[str, str]]) -> pd.DataFrame:
