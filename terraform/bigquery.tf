@@ -198,7 +198,7 @@ resource "google_bigquery_table" "predictions" {
       description = "Trading days ahead."
     },
     {
-      name        = "prediction"
+      name        = "model"
       type        = "FLOAT64"
       mode        = "REQUIRED"
       description = "Forecast of the champion."
