@@ -7,6 +7,7 @@ import pandas as pd
 from fastapi import FastAPI
 from pydantic import BaseModel
 
+from sp500_vol.common.baselines import FORECASTS
 from sp500_vol.common.bigquery import BigQueryClient
 from sp500_vol.common.config import get_git_commit
 from sp500_vol.common.registry import ModelRegistry, RegisteredModel
@@ -15,13 +16,6 @@ from sp500_vol.inference.predict import is_stale
 
 CACHE_SECONDS = 600
 NEW_YORK = ZoneInfo("America/New_York")
-# name in the API: column in predictions
-FORECASTS = {
-    "model": "prediction",
-    "rv_20d": "rv_20d",
-    "har_rv": "har_rv",
-    "vix_scaled": "vix_scaled",
-}
 
 
 class Health(BaseModel):
@@ -34,7 +28,7 @@ class Health(BaseModel):
 class Forecast(BaseModel):
     features_date: date
     horizon_days: int
-    prediction: float
+    model: float
     rv_20d: float
     har_rv: float
     vix_scaled: float
@@ -46,7 +40,7 @@ class Forecast(BaseModel):
 
 class PredictionRow(BaseModel):
     date: date
-    prediction: float
+    model: float
     rv_20d: float
     har_rv: float
     vix_scaled: float
@@ -114,8 +108,8 @@ def get_live_mae(predictions: pd.DataFrame, version: str) -> tuple[int, dict[str
     live = predictions[~is_backfill(predictions)]
     known = live[(live["model_version"] == version) & live["actual"].notna()]
     mae = {}
-    for name, column in FORECASTS.items():
-        errors = (known[column] - known["actual"]).abs()
+    for name in FORECASTS:
+        errors = (known[name] - known["actual"]).abs()
         mae[name] = to_optional(errors.mean())
     return len(known), mae
 

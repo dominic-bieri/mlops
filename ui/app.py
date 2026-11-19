@@ -36,7 +36,7 @@ with st.spinner("Loading, the service may need a few seconds to wake up."):
         get("/predictions"),
         columns=[
             "date",
-            "prediction",
+            "model",
             "har_rv",
             "rv_20d",
             "vix_scaled",
@@ -51,7 +51,7 @@ def label(name: str) -> str:
     return LINES[name][0]
 
 
-st.metric("Forecast", f"{forecast['prediction']:.1f} %")
+st.metric("Forecast", f"{forecast['model']:.1f} %")
 # 2026-11-14T15:01:30Z -> 2026-11-14 15:01
 predicted_at = forecast["predicted_at"][:16].replace("T", " ")
 st.caption(
@@ -63,7 +63,7 @@ st.caption(
 if forecast["stale"]:
     st.warning("Data is older than expected, the feature pipeline may have failed.")
 
-chart = rows.rename(columns={"prediction": "model"}).set_index(pd.to_datetime(rows["date"]))
+chart = rows.set_index(pd.to_datetime(rows["date"]))
 preset = st.segmented_control("Range", list(PRESETS), default="3 months")
 if days := PRESETS.get(preset):
     chart = chart.tail(days)

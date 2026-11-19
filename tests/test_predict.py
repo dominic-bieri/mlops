@@ -5,22 +5,24 @@ import pytest
 from fake_data import make_features
 from sklearn.linear_model import LinearRegression
 
-from sp500_vol.common.baselines import HAR_COLUMNS, get_baselines
+from sp500_vol.common.baselines import HAR_COLUMNS, get_baselines, get_forecasts
 from sp500_vol.common.schema import LABEL_COLUMN
-from sp500_vol.inference.predict import get_backfill, get_new_days, is_stale, predict
+from sp500_vol.inference.predict import get_backfill, get_new_days, is_stale
 from sp500_vol.training.model import refit_model
 from sp500_vol.training.train import train_and_evaluate
 
 
-def test_saved_baselines_give_training_predictions() -> None:
+def test_forecasts_with_saved_baselines_match_training() -> None:
     train = make_features(500, seed=1)
     test = make_features(50, seed=2)
     booster = refit_model(train, trees=30).booster_
 
-    df = predict(test, booster, get_baselines(train))
+    df = get_forecasts(test, booster, get_baselines(train))
 
     har = LinearRegression().fit(train[HAR_COLUMNS], train[LABEL_COLUMN])
+    assert list(df.columns) == ["model", "rv_20d", "har_rv", "vix_scaled"]
     assert np.allclose(df["har_rv"], har.predict(test[HAR_COLUMNS]))
+    assert np.allclose(df["rv_20d"], test["rv_20d"])
 
 
 def test_metadata_has_baselines_and_train_end() -> None:
