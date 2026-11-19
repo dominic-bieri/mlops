@@ -7,28 +7,25 @@ from sp500_vol.features import ingest
 from sp500_vol.features.ingest import BACKFILL_START, get_end, get_start, only_new
 
 
-class FakeFred:
-    def fetch_vix(self, start: date, end: date) -> pd.DataFrame:
-        return pd.DataFrame({"date": [date(2024, 3, 15)], "close": [13.2]})
+def fake_vix(start: date, end: date) -> pd.DataFrame:
+    return pd.DataFrame({"date": [date(2024, 3, 15)], "close": [13.2]})
 
 
-class BadTiingo:
-    def fetch_spy(self, start: date, end: date) -> pd.DataFrame:
-        return pd.DataFrame(
-            {
-                "date": [date(2024, 3, 15)],
-                "open": [510.0],
-                "high": [505.0],
-                "low": [508.0],
-                "close": [509.0],
-                "div_cash": [0.0],
-            }
-        )
+def bad_spy(start: date, end: date) -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            "date": [date(2024, 3, 15)],
+            "open": [510.0],
+            "high": [505.0],
+            "low": [508.0],
+            "close": [509.0],
+            "div_cash": [0.0],
+        }
+    )
 
 
-class FailingTiingo:
-    def fetch_spy(self, start: date, end: date) -> pd.DataFrame:
-        raise RuntimeError("Tiingo down")
+def failing_spy(start: date, end: date) -> pd.DataFrame:
+    raise RuntimeError("Tiingo down")
 
 
 class FakeBigQuery:
@@ -68,8 +65,8 @@ def test_end_uses_new_york_date_not_utc() -> None:
 
 def test_failed_fetch_writes_nothing(monkeypatch: pytest.MonkeyPatch) -> None:
     bq = FakeBigQuery()
-    monkeypatch.setattr(ingest, "FredClient", FakeFred)
-    monkeypatch.setattr(ingest, "TiingoClient", FailingTiingo)
+    monkeypatch.setattr(ingest, "fetch_vix", fake_vix)
+    monkeypatch.setattr(ingest, "fetch_spy", failing_spy)
     monkeypatch.setattr(ingest, "BigQueryClient", lambda: bq)
 
     with pytest.raises(RuntimeError):
@@ -80,8 +77,8 @@ def test_failed_fetch_writes_nothing(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_invalid_data_writes_nothing(monkeypatch: pytest.MonkeyPatch) -> None:
     bq = FakeBigQuery()
-    monkeypatch.setattr(ingest, "FredClient", FakeFred)
-    monkeypatch.setattr(ingest, "TiingoClient", BadTiingo)
+    monkeypatch.setattr(ingest, "fetch_vix", fake_vix)
+    monkeypatch.setattr(ingest, "fetch_spy", bad_spy)
     monkeypatch.setattr(ingest, "BigQueryClient", lambda: bq)
 
     with pytest.raises(ValueError):

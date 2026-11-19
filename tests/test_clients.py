@@ -3,7 +3,7 @@ from datetime import date
 import pytest
 import requests
 
-from sp500_vol.features.fred_client import FredClient, to_vix_frame
+from sp500_vol.features.fred_client import fetch_vix, to_vix_frame
 from sp500_vol.features.tiingo_client import to_spy_frame
 
 
@@ -51,7 +51,7 @@ def test_fred_error_does_not_leak_api_key(monkeypatch: pytest.MonkeyPatch) -> No
     monkeypatch.setattr(requests, "get", lambda *args, **kwargs: response)
 
     with pytest.raises(RuntimeError) as error:
-        FredClient().fetch_vix(date(2024, 1, 1), date(2024, 1, 2))
+        fetch_vix(date(2024, 1, 1), date(2024, 1, 2))
 
     assert "secret-key" not in str(error.value)
     assert "500" in str(error.value)
@@ -65,7 +65,7 @@ def test_fred_without_json_fails_clearly(monkeypatch: pytest.MonkeyPatch) -> Non
     monkeypatch.setattr(requests, "get", lambda *args, **kwargs: response)
 
     with pytest.raises(RuntimeError, match="no observations"):
-        FredClient().fetch_vix(date(2024, 1, 1), date(2024, 1, 2))
+        fetch_vix(date(2024, 1, 1), date(2024, 1, 2))
 
 
 @pytest.mark.parametrize("body", [b"null", b"[]", b'{"observations": null}'])
@@ -77,4 +77,4 @@ def test_fred_with_wrong_json_fails_clearly(monkeypatch: pytest.MonkeyPatch, bod
     monkeypatch.setattr(requests, "get", lambda *args, **kwargs: response)
 
     with pytest.raises(RuntimeError, match="no observations"):
-        FredClient().fetch_vix(date(2024, 1, 1), date(2024, 1, 2))
+        fetch_vix(date(2024, 1, 1), date(2024, 1, 2))
