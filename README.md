@@ -36,7 +36,7 @@ Features, label and table names: [`src/sp500_vol/common/schema.py`](src/sp500_vo
 |---|---|
 | Live data, backfill | [`features/ingest.py`](src/sp500_vol/features/ingest.py), [ADR 1](docs/adr/0001-raw-data.md) |
 | Features and feature store | [`features/build.py`](src/sp500_vol/features/build.py), BigQuery `features` with snapshots, [ADR 2](docs/adr/0002-feature-store.md) |
-| Training, no leakage | [`training/split.py`](src/sp500_vol/training/split.py), [`training/model.py`](src/sp500_vol/training/model.py), [ADR 6](docs/adr/0006-training-and-retraining.md) |
+| Training, no leakage | [`training/model.py`](src/sp500_vol/training/model.py), [ADR 6](docs/adr/0006-training-and-retraining.md) |
 | Experiment tracking, model registry | Agent Platform, [`training/train.py`](src/sp500_vol/training/train.py), [`common/registry.py`](src/sp500_vol/common/registry.py) |
 | Scheduled runs, retraining | [workflows](.github/workflows/) started by cron-job.org, [ADR 5](docs/adr/0005-issue-time-and-label-maturity.md) |
 | Inference, UI, cloud deploy | [`inference/`](src/sp500_vol/inference/), [`ui/app.py`](ui/app.py), deploy job in [`ci.yml`](.github/workflows/ci.yml), [ADR 7](docs/adr/0007-inference.md) |

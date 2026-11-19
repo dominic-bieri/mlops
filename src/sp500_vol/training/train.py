@@ -14,24 +14,19 @@ from sp500_vol.common.config import get_git_commit, get_image, is_github_actions
 from sp500_vol.common.log import github_notice, setup_logging
 from sp500_vol.common.registry import CHAMPION, MODEL_NAME, ModelRegistry, RegisteredModel
 from sp500_vol.common.schema import FEATURE_COLUMNS, LABEL_COLUMN, SNAPSHOT_PREFIX
-from sp500_vol.training.model import fit_model, refit_model
-from sp500_vol.training.split import get_cutoff, split
+from sp500_vol.training.model import fit_model, refit_model, split
 
 logger = logging.getLogger(__name__)
 
 MAX_MODEL_AGE = timedelta(days=180)
 VIX_STRESSED = 20
-ERRORS_FILE = "errors_by_year.csv"
-ERRORS_DIR = "errors"
 
 
 @dataclass
 class TrainingResult:
     model: lgb.LGBMRegressor
     params: dict
-    metrics: dict
     test: pd.DataFrame
-    errors_by_year: pd.DataFrame
     metadata: dict
 
 
@@ -76,8 +71,7 @@ def get_windows(train: pd.DataFrame, val: pd.DataFrame, test: pd.DataFrame) -> d
 
 
 def train_and_evaluate(features: pd.DataFrame, snapshot: str) -> TrainingResult:
-    cutoff = get_cutoff(features)
-    train, val, test = split(features, cutoff)
+    train, val, test = split(features)
 
     # fitted on train, val only chooses the trees (ADR 4)
     tuned = fit_model(train, val)
@@ -89,17 +83,10 @@ def train_and_evaluate(features: pd.DataFrame, snapshot: str) -> TrainingResult:
     model = refit_model(train_val, tuned.best_iteration_)
     baselines = get_baselines(train_val)
     errors = get_errors(test, model.booster_, baselines)
-    metrics = {
-        "test_mae": errors["model"].mean(),
-        "rv_20d_test_mae": errors["rv_20d"].mean(),
-        "har_rv_test_mae": errors["har_rv"].mean(),
-        "vix_scaled_test_mae": errors["vix_scaled"].mean(),
-    }
     params = {
         "snapshot": snapshot,
         "git_commit": get_git_commit(),
         "image": get_image(),
-        "cutoff": str(cutoff),
         **get_windows(train, val, test),
         "features": ",".join(FEATURE_COLUMNS),
         "trees": tuned.best_iteration_,
@@ -109,14 +96,16 @@ def train_and_evaluate(features: pd.DataFrame, snapshot: str) -> TrainingResult:
     }
     train_end = str(train_val["date"].max())
     metadata = {"train_end": train_end, "test_mae": errors.mean().to_dict(), **baselines}
-    logger.info("metrics: %s", {key: round(float(value), 4) for key, value in metrics.items()})
-    return TrainingResult(model, params, metrics, test, errors_by_year, metadata)
+    logger.info(
+        "test mae: %s", {key: round(value, 4) for key, value in metadata["test_mae"].items()}
+    )
+    return TrainingResult(model, params, test, metadata)
 
 
 def register(registry: ModelRegistry, result: TrainingResult, run_name: str) -> str:
     params = result.params
-    test_mae = result.metrics["test_mae"]
-    har_mae = result.metrics["har_rv_test_mae"]
+    test_mae = result.metadata["test_mae"]["model"]
+    har_mae = result.metadata["test_mae"]["har_rv"]
     description = (
         f"run {run_name}, commit {params['git_commit']}, snapshot {params['snapshot']}, "
         f"test MAE {test_mae:.4f}, HAR-RV {har_mae:.4f}"
@@ -132,8 +121,8 @@ def register(registry: ModelRegistry, result: TrainingResult, run_name: str) -> 
 def notify(
     result: TrainingResult, run_name: str, current_mae: float | None, model_version: str | None
 ) -> None:
-    test_mae = result.metrics["test_mae"]
-    har_mae = result.metrics["har_rv_test_mae"]
+    test_mae = result.metadata["test_mae"]["model"]
+    har_mae = result.metadata["test_mae"]["har_rv"]
     current_text = "none" if current_mae is None else f"{current_mae:.4f}"
     details = [
         f"Test MAE: model {test_mae:.4f}, HAR-RV {har_mae:.4f}, champion {current_text}",
@@ -153,21 +142,18 @@ def track_and_register(result: TrainingResult) -> None:
     registry = ModelRegistry()
     aiplatform.init(experiment=MODEL_NAME, experiment_tensorboard=False)
     run_name = datetime.now(UTC).strftime("run-%Y%m%d-%H%M%S")
-    metrics = result.metrics
+    test_mae = result.metadata["test_mae"]
 
     current_mae = get_current_mae(registry.load(CHAMPION), result.test)
 
     with aiplatform.start_run(run_name):
-        # not in the model folder, comes from the model fitted on train only
-        errors_path = f"{ERRORS_DIR}/{run_name}/{ERRORS_FILE}"
-        errors_uri = registry.upload(errors_path, result.errors_by_year.to_csv())
-        aiplatform.log_params({**result.params, "errors_by_year": errors_uri})
-        aiplatform.log_metrics(metrics)
+        aiplatform.log_params(result.params)
+        aiplatform.log_metrics({f"{name}_test_mae": mae for name, mae in test_mae.items()})
         if current_mae is not None:
             aiplatform.log_metrics({"current_test_mae": current_mae})
 
         model_version: str | None = None
-        if should_register(metrics["test_mae"], metrics["har_rv_test_mae"], current_mae):
+        if should_register(test_mae["model"], test_mae["har_rv"], current_mae):
             model_version = register(registry, result, run_name)
         aiplatform.log_params({"model_version": model_version or "none"})
 
