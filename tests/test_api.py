@@ -1,5 +1,5 @@
 from collections.abc import Iterator
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 import numpy as np
 import pandas as pd
@@ -58,25 +58,6 @@ def client(monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
         yield test_client
 
 
-def test_health_shows_model_and_commit(client: TestClient) -> None:
-    body = client.get("/health").json()
-
-    assert body["model_version"] == "3"
-    assert body["git_commit"] == "def"
-
-
-def test_predict_newest_day(client: TestClient) -> None:
-    body = client.get("/predict").json()
-
-    assert body["model_version"] == "3"
-    assert body["horizon_days"] == 5
-    assert body["model"] == 15.0
-    assert body["features_date"] == "2000-01-14"
-    assert body["predicted_at"] == "2000-01-15T15:00:00Z"
-    # fake features are from 2000
-    assert body["stale"] is True
-
-
 def test_open_predictions_have_no_actual(client: TestClient) -> None:
     rows = client.get("/predictions").json()
 
@@ -85,6 +66,8 @@ def test_open_predictions_have_no_actual(client: TestClient) -> None:
     assert rows[0]["backfill"] is False
     assert rows[1]["backfill"] is True
     assert rows[-1]["actual"] is None
+    assert rows[-1]["vix"] == 20.0
+    assert rows[-1]["predicted_at"] == "2000-01-15T15:00:00Z"
 
 
 def test_model_shows_test_and_live_mae(client: TestClient) -> None:
@@ -96,3 +79,19 @@ def test_model_shows_test_and_live_mae(client: TestClient) -> None:
     assert body["live_mae"]["model"] == 0.5
     assert body["live_mae"]["vix_scaled"] == 1.5
     assert body["drifted"] == ["vix"]
+    assert body["git_commit"] == "def"
+    # fake features are from 2000
+    assert body["stale"] is True
+
+
+@pytest.mark.parametrize(
+    ("newest", "today", "expected"),
+    [
+        (date(2026, 11, 13), date(2026, 11, 16), False),
+        (date(2026, 11, 13), date(2026, 11, 18), False),
+        (date(2026, 11, 13), date(2026, 11, 19), True),
+    ],
+    ids=["after weekend", "after Monday holiday", "missing day"],
+)
+def test_stale(newest: date, today: date, expected: bool) -> None:
+    assert api.is_stale(newest, today) == expected

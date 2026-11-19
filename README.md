@@ -23,7 +23,7 @@ Live: [UI](https://sp500-vol-ui-udjtjgs5dq-oa.a.run.app) · [API](https://sp500-
 - Feature pipeline, daily: loads SPY and VIX into BigQuery, builds the `features` table and a snapshot ([`src/sp500_vol/features/`](src/sp500_vol/features/))
 - Training pipeline, monthly: trains LightGBM on the newest snapshot. Registers the model if it beats HAR-RV and is not worse than the current model ([`src/sp500_vol/training/`](src/sp500_vol/training/))
 - Inference pipeline, after each feature run: forecasts the new days with `sp500-vol@champion` into `predictions` and checks drift ([`src/sp500_vol/inference/`](src/sp500_vol/inference/), [ADR 7](docs/adr/0007-inference.md))
-- API: FastAPI on Cloud Run, serves `predictions`: `/predict`, `/predictions`, `/model`, `/health`
+- API: FastAPI on Cloud Run, serves `predictions`: `/predictions`, `/model`
 - UI: Streamlit on Cloud Run, calls the API ([`ui/app.py`](ui/app.py))
 
 Only the batch job runs the model. The forecast needs no input and changes once a day, so the API serves the stored rows.
@@ -40,7 +40,7 @@ Features, label and table names: [`src/sp500_vol/common/schema.py`](src/sp500_vo
 | Experiment tracking, model registry | Agent Platform, [`training/train.py`](src/sp500_vol/training/train.py), [`common/registry.py`](src/sp500_vol/common/registry.py) |
 | Scheduled runs, retraining | [workflows](.github/workflows/) started by cron-job.org, [ADR 5](docs/adr/0005-issue-time-and-label-maturity.md) |
 | Inference, UI, cloud deploy | [`inference/`](src/sp500_vol/inference/), [`ui/app.py`](ui/app.py), deploy job in [`ci.yml`](.github/workflows/ci.yml), [ADR 7](docs/adr/0007-inference.md) |
-| Model version, drift | `/health`, `/model`, [`inference/drift.py`](src/sp500_vol/inference/drift.py) |
+| Model version, drift | `/model`, [`inference/drift.py`](src/sp500_vol/inference/drift.py) |
 | Tests, Docker, pinned versions | [`tests/`](tests/), [`Dockerfile`](Dockerfile), [`uv.lock`](uv.lock) |
 | Infrastructure | [`terraform/`](terraform/), [`docs/google-cloud.md`](docs/google-cloud.md) |
 
