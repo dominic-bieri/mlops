@@ -17,7 +17,7 @@ LINES = {
 PRESETS = {"3 months": 63, "1 year": 252, "All": None}
 
 
-# the data changes once a day
+# the data changes once a day, 10 minutes keeps BigQuery queries few
 @st.cache_data(ttl=600)
 def get(path: str) -> dict | list:
     # long timeout, the API may need a cold start

@@ -79,7 +79,7 @@ def test_model_shows_test_and_live_mae(client: TestClient) -> None:
     assert body["live_mae"]["model"] == 0.5
     assert body["live_mae"]["vix_scaled"] == 1.5
     assert body["drifted"] == ["vix"]
-    assert body["git_commit"] == "def"
+    assert body["api_commit"] == "def"
     # fake features are from 2000
     assert body["stale"] is True
 
