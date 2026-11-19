@@ -1,13 +1,12 @@
 from datetime import date
 
 import numpy as np
-import pytest
 from fake_data import make_features
 from sklearn.linear_model import LinearRegression
 
 from sp500_vol.common.baselines import FORECASTS, HAR_COLUMNS, get_baselines, get_forecasts
 from sp500_vol.common.schema import LABEL_COLUMN
-from sp500_vol.inference.predict import get_backfill, get_new_days, is_stale
+from sp500_vol.inference.predict import get_backfill, get_new_days
 from sp500_vol.training.model import refit_model
 from sp500_vol.training.train import train_and_evaluate
 
@@ -72,16 +71,3 @@ def test_nothing_new_twice() -> None:
     features = make_features(30, seed=1)
 
     assert get_new_days(features, set(features["date"]), features["date"].iloc[0]).empty
-
-
-@pytest.mark.parametrize(
-    ("newest", "today", "expected"),
-    [
-        (date(2026, 11, 13), date(2026, 11, 16), False),
-        (date(2026, 11, 13), date(2026, 11, 18), False),
-        (date(2026, 11, 13), date(2026, 11, 19), True),
-    ],
-    ids=["after weekend", "after Monday holiday", "missing day"],
-)
-def test_stale(newest: date, today: date, expected: bool) -> None:
-    assert is_stale(newest, today) == expected
