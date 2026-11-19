@@ -27,7 +27,7 @@ def client(monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
     predictions = pd.DataFrame(
         {
             "date": dates,
-            "prediction": 15.0,
+            "model": 15.0,
             "rv_20d": 14.0,
             "har_rv": 16.0,
             "vix_scaled": 17.0,
@@ -70,7 +70,7 @@ def test_predict_newest_day(client: TestClient) -> None:
 
     assert body["model_version"] == "3"
     assert body["horizon_days"] == 5
-    assert body["prediction"] == 15.0
+    assert body["model"] == 15.0
     assert body["features_date"] == "2000-01-14"
     assert body["predicted_at"] == "2000-01-15T15:00:00Z"
     # fake features are from 2000

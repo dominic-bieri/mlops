@@ -3,23 +3,24 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
 import lightgbm as lgb
+import numpy as np
 import pandas as pd
 from google.cloud import aiplatform
 from sklearn.metrics import mean_absolute_error
 
-from sp500_vol.common.baselines import get_baselines
+from sp500_vol.common.baselines import get_baselines, get_forecasts
 from sp500_vol.common.bigquery import BigQueryClient
 from sp500_vol.common.config import get_git_commit, get_image, is_github_actions
 from sp500_vol.common.log import github_notice, setup_logging
 from sp500_vol.common.registry import CHAMPION, MODEL_NAME, ModelRegistry, RegisteredModel
 from sp500_vol.common.schema import FEATURE_COLUMNS, LABEL_COLUMN, SNAPSHOT_PREFIX
-from sp500_vol.training.evaluate import get_errors, get_errors_by_year
 from sp500_vol.training.model import fit_model, refit_model
 from sp500_vol.training.split import get_cutoff, split
 
 logger = logging.getLogger(__name__)
 
 MAX_MODEL_AGE = timedelta(days=180)
+VIX_STRESSED = 20
 ERRORS_FILE = "errors_by_year.csv"
 ERRORS_DIR = "errors"
 
@@ -32,6 +33,17 @@ class TrainingResult:
     test: pd.DataFrame
     errors_by_year: pd.DataFrame
     metadata: dict
+
+
+def get_errors(df: pd.DataFrame, booster: lgb.Booster, baselines: dict) -> pd.DataFrame:
+    return get_forecasts(df, booster, baselines).sub(df[LABEL_COLUMN], axis=0).abs()
+
+
+def get_errors_by_year(df: pd.DataFrame, booster: lgb.Booster, baselines: dict) -> pd.DataFrame:
+    errors = get_errors(df, booster, baselines)
+    errors["year"] = pd.to_datetime(df["date"]).dt.year
+    errors["days"] = np.where(df["vix"] > VIX_STRESSED, "stressed", "calm")
+    return errors.groupby(["year", "days"]).mean().round(2)
 
 
 def get_current_mae(current: RegisteredModel | None, test: pd.DataFrame) -> float | None:
@@ -70,13 +82,13 @@ def train_and_evaluate(features: pd.DataFrame, snapshot: str) -> TrainingResult:
     # fitted on train, val only chooses the trees (ADR 4)
     tuned = fit_model(train, val)
     unseen = pd.concat([val, test])
-    errors_by_year = get_errors_by_year(tuned, get_baselines(train), unseen)
+    errors_by_year = get_errors_by_year(unseen, tuned.booster_, get_baselines(train))
     logger.info("mae per year:\n%s", errors_by_year.to_string())
 
     train_val = pd.concat([train, val])
     model = refit_model(train_val, tuned.best_iteration_)
     baselines = get_baselines(train_val)
-    errors = get_errors(model, baselines, test)
+    errors = get_errors(test, model.booster_, baselines)
     metrics = {
         "test_mae": errors["model"].mean(),
         "rv_20d_test_mae": errors["rv_20d"].mean(),

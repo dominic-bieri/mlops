@@ -1,9 +1,11 @@
+import lightgbm as lgb
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 
-from sp500_vol.common.schema import LABEL_COLUMN
+from sp500_vol.common.schema import FEATURE_COLUMNS, LABEL_COLUMN
 
 HAR_COLUMNS = ["rv_1d", "rv_5d", "rv_22d"]
+FORECASTS = ["model", "rv_20d", "har_rv", "vix_scaled"]
 
 
 # the VIX factor removes the risk premium (ADR 4)
@@ -23,3 +25,15 @@ def predict_har_rv(df: pd.DataFrame, baselines: dict) -> pd.Series:
 
 def predict_vix_scaled(df: pd.DataFrame, baselines: dict) -> pd.Series:
     return baselines["vix_factor"] * df["vix"]
+
+
+def get_forecasts(df: pd.DataFrame, booster: lgb.Booster, baselines: dict) -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            "model": booster.predict(df[FEATURE_COLUMNS]),
+            "rv_20d": df["rv_20d"],
+            "har_rv": predict_har_rv(df, baselines),
+            "vix_scaled": predict_vix_scaled(df, baselines),
+        },
+        index=df.index,
+    )
