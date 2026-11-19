@@ -17,7 +17,7 @@ LINES = {
 PRESETS = {"3 months": 63, "1 year": 252, "All": None}
 
 
-# the API caches BigQuery for 10 minutes too
+# the data changes once a day, 10 minutes keeps BigQuery queries few
 @st.cache_data(ttl=600)
 def get(path: str) -> dict | list:
     # long timeout, the API may need a cold start
@@ -30,7 +30,6 @@ st.set_page_config(page_title="S&P 500 Volatility Forecast")
 st.title("S&P 500 volatility, next 5 trading days")
 
 with st.spinner("Loading, the service may need a few seconds to wake up."):
-    forecast = get("/predict")
     model = get("/model")
     rows = pd.DataFrame(
         get("/predictions"),
@@ -40,11 +39,14 @@ with st.spinner("Loading, the service may need a few seconds to wake up."):
             "har_rv",
             "rv_20d",
             "vix_scaled",
+            "vix",
             "actual",
             "backfill",
             "model_version",
+            "predicted_at",
         ],
     )
+    forecast = rows.iloc[-1]
 
 
 def label(name: str) -> str:
@@ -56,11 +58,11 @@ st.metric("Forecast", f"{forecast['model']:.1f} %")
 predicted_at = forecast["predicted_at"][:16].replace("T", " ")
 st.caption(
     f"Model version {model['model_version']} (trained until {model['train_end']}) · "
-    f"features as of {forecast['features_date']} · forecast made {predicted_at} UTC · "
+    f"features as of {forecast['date']} · forecast made {predicted_at} UTC · "
     f"VIX {forecast['vix']:.1f} · "
     f"drift: {', '.join(model['drifted']) or 'none'}"
 )
-if forecast["stale"]:
+if model["stale"]:
     st.warning("Data is older than expected, the feature pipeline may have failed.")
 
 chart = rows.set_index(pd.to_datetime(rows["date"]))
