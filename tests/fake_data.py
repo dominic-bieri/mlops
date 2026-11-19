@@ -1,7 +1,12 @@
+from datetime import UTC, datetime
+
 import numpy as np
 import pandas as pd
 
+from sp500_vol.common.baselines import get_baselines
+from sp500_vol.common.registry import RegisteredModel
 from sp500_vol.common.schema import FEATURE_COLUMNS, LABEL_COLUMN
+from sp500_vol.training.model import refit_model
 
 DAYS = 100
 
@@ -37,3 +42,15 @@ def make_features(rows: int, seed: int, start: str = "2000-01-03") -> pd.DataFra
     noise = rng.normal(0, 1, rows)
     df[LABEL_COLUMN] = 0.9 * df["rv_5d"] + noise
     return df
+
+
+class FakeRegistry:
+    def __init__(self, features: pd.DataFrame) -> None:
+        train_days = features.iloc[:400]
+        booster = refit_model(train_days, trees=30).booster_
+        metadata = {"train_end": str(train_days["date"].max()), **get_baselines(train_days)}
+        created = datetime.now(UTC)
+        self.champion = RegisteredModel("3", {"run": "run-1"}, created, metadata, booster)
+
+    def load(self, version: str) -> RegisteredModel | None:
+        return self.champion

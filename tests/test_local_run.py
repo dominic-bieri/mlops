@@ -1,15 +1,11 @@
 from datetime import date
 
-import lightgbm as lgb
 import pandas as pd
 import pytest
-from fake_data import make_features
+from fake_data import FakeRegistry, make_features
 
-from sp500_vol.common.baselines import get_baselines
-from sp500_vol.common.registry import RegisteredModel
 from sp500_vol.inference import batch
 from sp500_vol.training import train
-from sp500_vol.training.model import refit_model
 
 
 class FakeBigQuery:
@@ -28,20 +24,6 @@ class FakeBigQuery:
 
     def append(self, df: pd.DataFrame, table: str) -> None:
         self.written_tables.append(table)
-
-
-class FakeRegistry:
-    def __init__(self, features: pd.DataFrame) -> None:
-        train_days = features.iloc[:400]
-        self.booster = refit_model(train_days, trees=30).booster_
-        train_end = str(train_days["date"].max())
-        self.metadata = {"train_end": train_end, **get_baselines(train_days)}
-
-    def load_registered(self, version: str) -> RegisteredModel:
-        return RegisteredModel("3", {"run": "run-1"}, self.metadata)
-
-    def load_booster(self, version: str) -> lgb.Booster:
-        return self.booster
 
 
 def test_local_training_tracks_and_registers_nothing(monkeypatch: pytest.MonkeyPatch) -> None:
