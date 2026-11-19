@@ -1,4 +1,3 @@
-import time
 from datetime import date, datetime
 from functools import lru_cache
 from zoneinfo import ZoneInfo
@@ -12,30 +11,10 @@ from sp500_vol.common.bigquery import BigQueryClient
 from sp500_vol.common.config import get_git_commit
 from sp500_vol.common.registry import ModelRegistry, RegisteredModel
 from sp500_vol.common.schema import DRIFT_TABLE, FEATURES_TABLE, LABEL_COLUMN, PREDICTIONS_TABLE
-from sp500_vol.inference.predict import is_stale
 
-CACHE_SECONDS = 600
+# a weekend plus a Monday holiday, a day arrives the next morning
+MAX_AGE_DAYS = 5
 NEW_YORK = ZoneInfo("America/New_York")
-
-
-class Health(BaseModel):
-    status: str
-    model_version: str
-    features_date: date
-    git_commit: str
-
-
-class Forecast(BaseModel):
-    features_date: date
-    horizon_days: int
-    model: float
-    rv_20d: float
-    har_rv: float
-    vix_scaled: float
-    vix: float
-    model_version: str
-    predicted_at: datetime
-    stale: bool
 
 
 class PredictionRow(BaseModel):
@@ -44,7 +23,9 @@ class PredictionRow(BaseModel):
     rv_20d: float
     har_rv: float
     vix_scaled: float
+    vix: float
     model_version: str
+    predicted_at: datetime
     actual: float | None
     backfill: bool
 
@@ -59,13 +40,11 @@ class ModelInfo(BaseModel):
     live_days: int
     live_mae: dict[str, float | None]
     drifted: list[str]
+    git_commit: str
+    stale: bool
 
 
 app = FastAPI(title="S&P 500 volatility forecast")
-
-
-# BigQuery at most every 10 minutes per table, the data changes once a day
-cache: dict[str, tuple[float, pd.DataFrame]] = {}
 
 
 @lru_cache
@@ -77,27 +56,16 @@ def table(name: str) -> str:
     return bq().get_table_id(name)
 
 
-def read_cached(name: str, sql: str) -> pd.DataFrame:
-    now = time.time()
-    if name in cache:
-        read_at, df = cache[name]
-        if now - read_at < CACHE_SECONDS:
-            return df
-    df = bq().query(sql)
-    cache[name] = (now, df)
-    return df
-
-
 def read_predictions() -> pd.DataFrame:
     sql = (
         f"SELECT p.*, f.{LABEL_COLUMN} AS actual FROM `{table(PREDICTIONS_TABLE)}` p "
         f"LEFT JOIN `{table(FEATURES_TABLE)}` f USING (date) ORDER BY date"
     )
-    return read_cached(PREDICTIONS_TABLE, sql)
+    return bq().query(sql)
 
 
 def read_drift() -> pd.DataFrame:
-    return read_cached(DRIFT_TABLE, f"SELECT * FROM `{table(DRIFT_TABLE)}`")
+    return bq().query(f"SELECT * FROM `{table(DRIFT_TABLE)}`")
 
 
 def is_backfill(predictions: pd.DataFrame) -> pd.Series:
@@ -130,39 +98,17 @@ def get_model(version: str) -> RegisteredModel:
     return registered
 
 
-def newest() -> pd.Series:
-    return read_predictions().iloc[-1]
+def is_stale(newest: date, today: date) -> bool:
+    return (today - newest).days > MAX_AGE_DAYS
 
 
 def to_optional(value: float) -> float | None:
     return None if pd.isna(value) else float(value)
 
 
-@app.get("/health")
-def health() -> Health:
-    row = newest()
-    return Health(
-        status="ok",
-        model_version=row["model_version"],
-        features_date=row["date"],
-        git_commit=get_git_commit(),
-    )
-
-
 # the batch job makes the forecast, the predictions table is the log (ADR 7)
-@app.get("/predict")
-def predict_newest() -> Forecast:
-    row = newest()
-    return Forecast(
-        **row.to_dict(),
-        features_date=row["date"],
-        stale=is_stale(row["date"], datetime.now(NEW_YORK).date()),
-    )
-
-
 @app.get("/predictions")
 def predictions() -> list[PredictionRow]:
-    # assign copies, the cached frame stays unchanged
     df = read_predictions().assign(
         actual=lambda df: df["actual"].map(to_optional), backfill=is_backfill
     )
@@ -171,9 +117,11 @@ def predictions() -> list[PredictionRow]:
 
 @app.get("/model")
 def model() -> ModelInfo:
-    version = newest()["model_version"]
+    predictions = read_predictions()
+    newest = predictions.iloc[-1]
+    version = newest["model_version"]
     registered = get_model(version)
-    live_days, live_mae = get_live_mae(read_predictions(), version)
+    live_days, live_mae = get_live_mae(predictions, version)
     return ModelInfo(
         model_version=version,
         run=registered.labels.get("run", ""),
@@ -184,4 +132,6 @@ def model() -> ModelInfo:
         live_days=live_days,
         live_mae=live_mae,
         drifted=get_drifted(read_drift(), version),
+        git_commit=get_git_commit(),
+        stale=is_stale(newest["date"], datetime.now(NEW_YORK).date()),
     )
