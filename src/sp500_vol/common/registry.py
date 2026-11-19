@@ -37,19 +37,19 @@ class ModelRegistry:
         # created by Terraform (storage.tf)
         self.bucket = self.client.bucket(f"{project}-models")
 
-    # version is a version id or an alias, None if no usable model
+    # version is a version id or an alias
     def load(self, version: str) -> RegisteredModel | None:
-        parent = self.get_parent()
+        parent = self._get_parent()
         if parent is None:
             logger.info("no model %s", MODEL_NAME)
             return None
         try:
             registered = aiplatform.Model(f"{parent}@{version}")
-            metadata = json.loads(self.download(registered, METADATA_FILE))
+            metadata = json.loads(self._download(registered, METADATA_FILE))
+            booster = lgb.Booster(model_str=self._download(registered, MODEL_FILE))
         except NotFound:
-            logger.info("model %s@%s or its metadata not found", MODEL_NAME, version)
+            logger.info("model %s@%s or its files not found", MODEL_NAME, version)
             return None
-        booster = lgb.Booster(model_str=self.download(registered, MODEL_FILE))
         if booster.feature_name() != FEATURE_COLUMNS:
             logger.info("model %s has other features", registered.version_id)
             return None
@@ -75,7 +75,7 @@ class ModelRegistry:
             display_name=MODEL_NAME,
             artifact_uri=f"gs://{self.bucket.name}/{run_name}",
             serving_container_image_uri=SERVING_IMAGE,
-            parent_model=self.get_parent(),
+            parent_model=self._get_parent(),
             version_aliases=[CHAMPION],
             version_description=description,
             labels=labels,
@@ -87,7 +87,7 @@ class ModelRegistry:
         blob.upload_from_string(text)
         return f"gs://{self.bucket.name}/{blob.name}"
 
-    def get_parent(self) -> str | None:
+    def _get_parent(self) -> str | None:
         models = aiplatform.Model.list(filter=f'display_name="{MODEL_NAME}"')
         if not models:
             return None
@@ -95,6 +95,6 @@ class ModelRegistry:
             raise RuntimeError(f"{len(models)} models named {MODEL_NAME}, keep one")
         return models[0].resource_name
 
-    def download(self, registered: aiplatform.Model, file: str) -> str:
+    def _download(self, registered: aiplatform.Model, file: str) -> str:
         blob = storage.Blob.from_uri(f"{registered.uri}/{file}", client=self.client)
         return blob.download_as_text()

@@ -10,12 +10,13 @@ from google.api_core.exceptions import NotFound
 from sp500_vol.common import registry
 from sp500_vol.common.registry import CHAMPION, ModelRegistry
 from sp500_vol.common.schema import FEATURE_COLUMNS, LABEL_COLUMN
-from sp500_vol.training.model import refit_model
 
 CREATED = datetime(2026, 11, 1, tzinfo=UTC)
 
 
-def fake_registry(monkeypatch: pytest.MonkeyPatch, files: dict[str, str]) -> ModelRegistry:
+def fake_registry(
+    monkeypatch: pytest.MonkeyPatch, files: dict[str, str], alias: bool = True
+) -> ModelRegistry:
     class FakeModel:
         resource_name = "models/1"
         version_id = "3"
@@ -24,7 +25,7 @@ def fake_registry(monkeypatch: pytest.MonkeyPatch, files: dict[str, str]) -> Mod
         uri = "gs://bucket/run-1"
 
         def __init__(self, name: str) -> None:
-            if not files:
+            if not alias:
                 raise NotFound(name)
 
         @staticmethod
@@ -46,7 +47,7 @@ def fake_registry(monkeypatch: pytest.MonkeyPatch, files: dict[str, str]) -> Mod
     return ModelRegistry()
 
 
-def model_text(columns: list[str]) -> str:
+def model_text(columns: list[str] = FEATURE_COLUMNS) -> str:
     train = make_features(200, seed=1)
     renamed = train[FEATURE_COLUMNS].set_axis(columns, axis=1)
     model = lgb.LGBMRegressor(n_estimators=5, verbose=-1).fit(renamed, train[LABEL_COLUMN])
@@ -54,8 +55,7 @@ def model_text(columns: list[str]) -> str:
 
 
 def test_load_returns_version_metadata_and_booster(monkeypatch: pytest.MonkeyPatch) -> None:
-    booster = refit_model(make_features(200, seed=1), trees=5).booster_
-    files = {"model.txt": booster.model_to_string(), "metadata.json": json.dumps({"a": 1})}
+    files = {"model.txt": model_text(), "metadata.json": json.dumps({"a": 1})}
 
     champion = fake_registry(monkeypatch, files).load(CHAMPION)
 
@@ -70,8 +70,14 @@ def test_no_model(monkeypatch: pytest.MonkeyPatch) -> None:
     assert fake_registry(monkeypatch, {}).load(CHAMPION) is None
 
 
+def test_no_champion_alias(monkeypatch: pytest.MonkeyPatch) -> None:
+    files = {"model.txt": model_text(), "metadata.json": "{}"}
+
+    assert fake_registry(monkeypatch, files, alias=False).load(CHAMPION) is None
+
+
 def test_model_without_metadata(monkeypatch: pytest.MonkeyPatch) -> None:
-    files = {"model.txt": model_text(FEATURE_COLUMNS)}
+    files = {"model.txt": model_text()}
 
     assert fake_registry(monkeypatch, files).load(CHAMPION) is None
 
