@@ -130,7 +130,10 @@ def get_drifted(drift: pd.DataFrame, version: str) -> list[str]:
 # a version never changes
 @lru_cache
 def get_model(version: str) -> RegisteredModel:
-    return ModelRegistry().load_registered(version)
+    registered = ModelRegistry().load(version)
+    if registered is None:
+        raise RuntimeError(f"no model {version}")
+    return registered
 
 
 def newest() -> pd.Series:
