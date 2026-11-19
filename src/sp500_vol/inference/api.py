@@ -1,6 +1,5 @@
 from datetime import date, datetime
 from functools import lru_cache
-from zoneinfo import ZoneInfo
 
 import pandas as pd
 from fastapi import FastAPI
@@ -10,11 +9,16 @@ from sp500_vol.common.baselines import FORECASTS
 from sp500_vol.common.bigquery import BigQueryClient
 from sp500_vol.common.config import get_git_commit
 from sp500_vol.common.registry import ModelRegistry, RegisteredModel
-from sp500_vol.common.schema import DRIFT_TABLE, FEATURES_TABLE, LABEL_COLUMN, PREDICTIONS_TABLE
+from sp500_vol.common.schema import (
+    DRIFT_TABLE,
+    FEATURES_TABLE,
+    LABEL_COLUMN,
+    NEW_YORK,
+    PREDICTIONS_TABLE,
+)
 
 # a weekend plus a Monday holiday, a day arrives the next morning
 MAX_AGE_DAYS = 5
-NEW_YORK = ZoneInfo("America/New_York")
 
 
 class PredictionRow(BaseModel):
