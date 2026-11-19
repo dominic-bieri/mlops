@@ -16,7 +16,7 @@ def count_between(features: pd.DataFrame, after: date, before: date) -> int:
     return len(rows)
 
 
-def test_windows_end_at_cutoff() -> None:
+def test_windows_end_at_newest_label() -> None:
     features = make_features("2015-01-01", "2026-10-16")
 
     train, val, test = split(features)
