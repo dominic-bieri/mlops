@@ -56,4 +56,4 @@ def test_train_and_evaluate_beats_20_day_baseline() -> None:
     result = train_and_evaluate(features, "features_test")
 
     assert result.model.booster_.num_trees() == result.params["trees"]
-    assert result.metrics["test_mae"] < result.metrics["rv_20d_test_mae"]
+    assert result.metadata["test_mae"]["model"] < result.metadata["test_mae"]["rv_20d"]

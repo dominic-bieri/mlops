@@ -69,8 +69,8 @@ class ModelRegistry:
         description: str,
         labels: dict[str, str],
     ) -> str:
-        self.upload(f"{run_name}/{MODEL_FILE}", model.booster_.model_to_string())
-        self.upload(f"{run_name}/{METADATA_FILE}", json.dumps(metadata, indent=2))
+        self._upload(f"{run_name}/{MODEL_FILE}", model.booster_.model_to_string())
+        self._upload(f"{run_name}/{METADATA_FILE}", json.dumps(metadata, indent=2))
         registered = aiplatform.Model.upload(
             display_name=MODEL_NAME,
             artifact_uri=f"gs://{self.bucket.name}/{run_name}",
@@ -82,10 +82,8 @@ class ModelRegistry:
         )
         return registered.version_id
 
-    def upload(self, path: str, text: str) -> str:
-        blob = self.bucket.blob(path)
-        blob.upload_from_string(text)
-        return f"gs://{self.bucket.name}/{blob.name}"
+    def _upload(self, path: str, text: str) -> None:
+        self.bucket.blob(path).upload_from_string(text)
 
     def _get_parent(self) -> str | None:
         models = aiplatform.Model.list(filter=f'display_name="{MODEL_NAME}"')
