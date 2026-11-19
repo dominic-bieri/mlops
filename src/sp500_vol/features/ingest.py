@@ -1,12 +1,11 @@
 import logging
 from datetime import UTC, date, datetime, timedelta
-from zoneinfo import ZoneInfo
 
 import pandas as pd
 
 from sp500_vol.common.bigquery import BigQueryClient
 from sp500_vol.common.log import setup_logging
-from sp500_vol.common.schema import SP500_TABLE, VIX_TABLE
+from sp500_vol.common.schema import NEW_YORK, SP500_TABLE, VIX_TABLE
 from sp500_vol.features.fred_client import fetch_vix
 from sp500_vol.features.tiingo_client import fetch_spy
 from sp500_vol.features.validate import validate_spy, validate_vix
@@ -17,8 +16,6 @@ BACKFILL_START = date(1993, 1, 29)
 
 # catches late FRED values
 OVERLAP_DAYS = 7
-
-NEW_YORK = ZoneInfo("America/New_York")
 
 
 def get_start(latest: date | None) -> date:
