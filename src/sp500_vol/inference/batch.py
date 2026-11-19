@@ -1,7 +1,6 @@
 import logging
 from datetime import UTC, date, datetime
 
-import lightgbm as lgb
 import pandas as pd
 
 from sp500_vol.common.bigquery import BigQueryClient
@@ -15,10 +14,8 @@ from sp500_vol.inference.predict import get_backfill, get_new_days, predict
 logger = logging.getLogger(__name__)
 
 
-def make_predictions(
-    new_days: pd.DataFrame, champion: RegisteredModel, booster: lgb.Booster
-) -> pd.DataFrame:
-    df = predict(new_days, booster, champion.metadata)
+def make_predictions(new_days: pd.DataFrame, champion: RegisteredModel) -> pd.DataFrame:
+    df = predict(new_days, champion.booster, champion.metadata)
     df["model_version"] = champion.version
     df["model_run"] = champion.labels.get("run", "")
     df["git_commit"] = get_git_commit()
@@ -38,7 +35,9 @@ def main() -> None:
     bq = BigQueryClient()
     features = bq.read_table(FEATURES_TABLE)
     registry = ModelRegistry()
-    champion = registry.load_registered(CHAMPION)
+    champion = registry.load(CHAMPION)
+    if champion is None:
+        raise RuntimeError("no model, run the training pipeline first")
     train_end = date.fromisoformat(champion.metadata["train_end"])
     predicted = bq.get_dates(PREDICTIONS_TABLE)
     new_days = get_new_days(features, predicted, train_end)
@@ -46,9 +45,7 @@ def main() -> None:
         github_notice("Inference: no new feature day", [f"Newest day: {features['date'].max()}"])
         return
 
-    # by version id, the alias may move in between
-    booster = registry.load_booster(champion.version)
-    predictions = make_predictions(new_days, champion, booster)
+    predictions = make_predictions(new_days, champion)
     predictions["backfill"] = get_backfill(predictions["date"], predicted)
     drift = make_drift(features, champion, train_end)
     logger.info("predictions:\n%s", predictions.to_string())

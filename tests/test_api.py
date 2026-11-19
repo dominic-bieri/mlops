@@ -16,7 +16,7 @@ def client(monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
         "test_mae": {"model": 2.5, "rv_20d": 3.0, "har_rv": 2.8, "vix_scaled": 3.1},
     }
     labels = {"run": "run-1", "snapshot": "features_1", "git_commit": "abc"}
-    registered = RegisteredModel("3", labels, metadata)
+    registered = RegisteredModel("3", labels, pd.Timestamp("2002-01-01", tz="UTC"), metadata, None)
 
     dates = pd.bdate_range("2000-01-03", periods=10).date
     predictions = pd.DataFrame(
