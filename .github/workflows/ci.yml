@@ -115,7 +115,7 @@ jobs:
           }
           API_URL=$(candidate api)
           curl -fsS --retry 10 --retry-delay 5 --retry-all-errors "$API_URL/model" \
-            | jq -e --arg commit "$GITHUB_SHA" '.git_commit == $commit'
+            | jq -e --arg commit "$GITHUB_SHA" '.api_commit == $commit'
           curl -fsS --retry 10 --retry-delay 5 --retry-all-errors "$(candidate ui)/_stcore/health"
 
       - name: Switch traffic

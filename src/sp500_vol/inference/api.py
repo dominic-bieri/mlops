@@ -40,7 +40,7 @@ class ModelInfo(BaseModel):
     live_days: int
     live_mae: dict[str, float | None]
     drifted: list[str]
-    git_commit: str
+    api_commit: str
     stale: bool
 
 
@@ -117,11 +117,11 @@ def predictions() -> list[PredictionRow]:
 
 @app.get("/model")
 def model() -> ModelInfo:
-    predictions = read_predictions()
-    newest = predictions.iloc[-1]
+    rows = read_predictions()
+    newest = rows.iloc[-1]
     version = newest["model_version"]
     registered = get_model(version)
-    live_days, live_mae = get_live_mae(predictions, version)
+    live_days, live_mae = get_live_mae(rows, version)
     return ModelInfo(
         model_version=version,
         run=registered.labels.get("run", ""),
@@ -132,6 +132,6 @@ def model() -> ModelInfo:
         live_days=live_days,
         live_mae=live_mae,
         drifted=get_drifted(read_drift(), version),
-        git_commit=get_git_commit(),
+        api_commit=get_git_commit(),
         stale=is_stale(newest["date"], datetime.now(NEW_YORK).date()),
     )
