@@ -81,7 +81,8 @@ elif lines:
 else:
     st.info("Select at least one line.")
 
-live = rows[~rows["backfill"].astype(bool) & (rows["model_version"] == model["model_version"])]
+is_live = ~rows["backfill"].astype(bool)
+live = rows[is_live & (rows["model_version"] == model["model_version"])]
 mae = pd.DataFrame(
     [model["test_mae"], model["live_mae"]],
     index=[
@@ -92,7 +93,7 @@ mae = pd.DataFrame(
 forecasts = [name for name in LINES if name != "actual"]
 st.table(mae[forecasts].rename(columns=label).style.format("{:.2f}", na_rep="–"))
 
-first_live = rows.loc[~rows["backfill"].astype(bool), "date"].min()
+first_live = rows.loc[is_live, "date"].min()
 st.caption(
     "Annualized volatility of SPY in percent, forecast for the next 5 trading days, the actual "
     f"value is known 5 trading days later. Live since {first_live}, before: test period, forecast "
