@@ -35,12 +35,12 @@ class TrainingResult:
     metadata: dict
 
 
-def get_errors(booster: lgb.Booster, baselines: dict, df: pd.DataFrame) -> pd.DataFrame:
+def get_errors(df: pd.DataFrame, booster: lgb.Booster, baselines: dict) -> pd.DataFrame:
     return get_forecasts(df, booster, baselines).sub(df[LABEL_COLUMN], axis=0).abs()
 
 
-def get_errors_by_year(booster: lgb.Booster, baselines: dict, df: pd.DataFrame) -> pd.DataFrame:
-    errors = get_errors(booster, baselines, df)
+def get_errors_by_year(df: pd.DataFrame, booster: lgb.Booster, baselines: dict) -> pd.DataFrame:
+    errors = get_errors(df, booster, baselines)
     errors["year"] = pd.to_datetime(df["date"]).dt.year
     errors["days"] = np.where(df["vix"] > VIX_STRESSED, "stressed", "calm")
     return errors.groupby(["year", "days"]).mean().round(2)
@@ -82,13 +82,13 @@ def train_and_evaluate(features: pd.DataFrame, snapshot: str) -> TrainingResult:
     # fitted on train, val only chooses the trees (ADR 4)
     tuned = fit_model(train, val)
     unseen = pd.concat([val, test])
-    errors_by_year = get_errors_by_year(tuned.booster_, get_baselines(train), unseen)
+    errors_by_year = get_errors_by_year(unseen, tuned.booster_, get_baselines(train))
     logger.info("mae per year:\n%s", errors_by_year.to_string())
 
     train_val = pd.concat([train, val])
     model = refit_model(train_val, tuned.best_iteration_)
     baselines = get_baselines(train_val)
-    errors = get_errors(model.booster_, baselines, test)
+    errors = get_errors(test, model.booster_, baselines)
     metrics = {
         "test_mae": errors["model"].mean(),
         "rv_20d_test_mae": errors["rv_20d"].mean(),
