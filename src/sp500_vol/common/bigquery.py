@@ -26,11 +26,7 @@ class BigQueryClient:
     def get_dates(self, table: str) -> set[date]:
         table_id = self.get_table_id(table)
         sql = f"SELECT date FROM `{table_id}`"
-
-        dates = set()
-        for row in self.client.query(sql).result():
-            dates.add(row["date"])
-        return dates
+        return {row["date"] for row in self.client.query(sql).result()}
 
     def append(self, df: pd.DataFrame, table: str) -> None:
         self.load(df, table, "WRITE_APPEND")

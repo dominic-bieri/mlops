@@ -1,6 +1,9 @@
 # one place for features, label and tables, used by all three pipelines
 
+from zoneinfo import ZoneInfo
+
 HORIZON = 5
+NEW_YORK = ZoneInfo("America/New_York")
 
 FEATURE_COLUMNS = [
     "log_return",
