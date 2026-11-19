@@ -1,12 +1,15 @@
 from collections.abc import Iterator
+from datetime import UTC, datetime
 
 import numpy as np
 import pandas as pd
 import pytest
+from fake_data import make_features
 from fastapi.testclient import TestClient
 
 from sp500_vol.common.registry import RegisteredModel
 from sp500_vol.inference import api
+from sp500_vol.training.model import refit_model
 
 
 @pytest.fixture
@@ -16,7 +19,9 @@ def client(monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
         "test_mae": {"model": 2.5, "rv_20d": 3.0, "har_rv": 2.8, "vix_scaled": 3.1},
     }
     labels = {"run": "run-1", "snapshot": "features_1", "git_commit": "abc"}
-    registered = RegisteredModel("3", labels, pd.Timestamp("2002-01-01", tz="UTC"), metadata, None)
+    booster = refit_model(make_features(50, seed=1), trees=1).booster_
+    created = datetime(2002, 1, 1, tzinfo=UTC)
+    registered = RegisteredModel("3", labels, created, metadata, booster)
 
     dates = pd.bdate_range("2000-01-03", periods=10).date
     predictions = pd.DataFrame(

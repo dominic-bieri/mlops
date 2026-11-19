@@ -132,7 +132,7 @@ def get_drifted(drift: pd.DataFrame, version: str) -> list[str]:
 def get_model(version: str) -> RegisteredModel:
     registered = ModelRegistry().load(version)
     if registered is None:
-        raise RuntimeError(f"model {version} not found")
+        raise RuntimeError(f"no model {version}")
     return registered
 
 
