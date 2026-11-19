@@ -3,19 +3,22 @@ from datetime import UTC, date, datetime
 
 import pandas as pd
 
+from sp500_vol.common.baselines import get_forecasts
 from sp500_vol.common.bigquery import BigQueryClient
 from sp500_vol.common.config import get_git_commit, is_github_actions
 from sp500_vol.common.log import github_notice, setup_logging
 from sp500_vol.common.registry import CHAMPION, ModelRegistry, RegisteredModel
-from sp500_vol.common.schema import DRIFT_TABLE, FEATURES_TABLE, PREDICTIONS_TABLE
+from sp500_vol.common.schema import DRIFT_TABLE, FEATURES_TABLE, HORIZON, PREDICTIONS_TABLE
 from sp500_vol.inference.drift import get_drift
-from sp500_vol.inference.predict import get_backfill, get_new_days, predict
+from sp500_vol.inference.predict import get_backfill, get_new_days
 
 logger = logging.getLogger(__name__)
 
 
 def make_predictions(new_days: pd.DataFrame, champion: RegisteredModel) -> pd.DataFrame:
-    df = predict(new_days, champion.booster, champion.metadata)
+    forecasts = get_forecasts(new_days, champion.booster, champion.metadata)
+    df = pd.concat([new_days[["date", "vix"]], forecasts], axis=1).reset_index(drop=True)
+    df["horizon_days"] = HORIZON
     df["model_version"] = champion.version
     df["model_run"] = champion.labels.get("run", "")
     df["git_commit"] = get_git_commit()
@@ -64,7 +67,7 @@ def main() -> None:
         "Inference: new forecast",
         [
             f"Day: {latest['date']}",
-            f"Forecast: {latest['prediction']:.1f}, HAR-RV {latest['har_rv']:.1f}",
+            f"Forecast: {latest['model']:.1f}, HAR-RV {latest['har_rv']:.1f}",
             f"Model version: {champion.version}",
             f"New days: {len(predictions)}, backfill {predictions['backfill'].sum()}",
             f"PSI above threshold: {', '.join(drifted) or 'none'}",
