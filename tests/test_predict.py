@@ -5,7 +5,7 @@ import pytest
 from fake_data import make_features
 from sklearn.linear_model import LinearRegression
 
-from sp500_vol.common.baselines import HAR_COLUMNS, get_baselines, get_forecasts
+from sp500_vol.common.baselines import FORECASTS, HAR_COLUMNS, get_baselines, get_forecasts
 from sp500_vol.common.schema import LABEL_COLUMN
 from sp500_vol.inference.predict import get_backfill, get_new_days, is_stale
 from sp500_vol.training.model import refit_model
@@ -20,7 +20,7 @@ def test_forecasts_with_saved_baselines_match_training() -> None:
     df = get_forecasts(test, booster, get_baselines(train))
 
     har = LinearRegression().fit(train[HAR_COLUMNS], train[LABEL_COLUMN])
-    assert list(df.columns) == ["model", "rv_20d", "har_rv", "vix_scaled"]
+    assert list(df.columns) == FORECASTS
     assert np.allclose(df["har_rv"], har.predict(test[HAR_COLUMNS]))
     assert np.allclose(df["rv_20d"], test["rv_20d"])
 
