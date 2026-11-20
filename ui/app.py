@@ -93,6 +93,7 @@ mae = pd.DataFrame(
     ],
 )
 forecasts = [name for name in LINES if name != "actual"]
+st.caption("Mean absolute error (MAE) in percentage points, lower is better.")
 st.table(mae[forecasts].rename(columns=label).style.format("{:.2f}", na_rep="–"))
 
 first_live = rows.loc[is_live, "date"].min()
