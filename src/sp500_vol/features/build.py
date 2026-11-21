@@ -6,7 +6,7 @@ import pandas as pd
 
 from sp500_vol.common.bigquery import BigQueryClient
 from sp500_vol.common.config import get_git_commit, is_github_actions
-from sp500_vol.common.log import github_notice, setup_logging
+from sp500_vol.common.log import github_summary, setup_logging
 from sp500_vol.common.schema import (
     FEATURE_COLUMNS,
     FEATURES_TABLE,
@@ -97,7 +97,7 @@ def main() -> None:
     snapshot = get_snapshot_name(datetime.now(UTC))
     bq.create_snapshot(FEATURES_TABLE, snapshot, f"commit {get_git_commit()}")
     newest = features["date"].max()
-    github_notice(
+    github_summary(
         "Features: new snapshot",
         [f"Snapshot: {snapshot}", f"Rows: {len(features)}", f"Newest day: {newest}"],
     )

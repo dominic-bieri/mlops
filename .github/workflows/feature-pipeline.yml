@@ -48,6 +48,7 @@ jobs:
           docker run --rm
           -e FRED_API_KEY -e TIINGO_API_KEY -e GCP_PROJECT_ID -e BQ_DATASET
           -e GITHUB_ACTIONS -e GITHUB_SHA
+          -v "$GITHUB_STEP_SUMMARY:/summary.md" -e GITHUB_STEP_SUMMARY=/summary.md
           -v "$GOOGLE_APPLICATION_CREDENTIALS:/creds/adc.json:ro"
           -e GOOGLE_APPLICATION_CREDENTIALS=/creds/adc.json
           "$IMAGE"

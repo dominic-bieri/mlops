@@ -6,7 +6,7 @@ import pandas as pd
 from sp500_vol.common.baselines import get_forecasts
 from sp500_vol.common.bigquery import BigQueryClient
 from sp500_vol.common.config import get_git_commit, is_github_actions
-from sp500_vol.common.log import github_notice, setup_logging
+from sp500_vol.common.log import github_summary, setup_logging
 from sp500_vol.common.registry import CHAMPION, ModelRegistry, RegisteredModel
 from sp500_vol.common.schema import DRIFT_TABLE, FEATURES_TABLE, HORIZON, PREDICTIONS_TABLE
 from sp500_vol.inference.drift import get_drift
@@ -55,7 +55,7 @@ def main() -> None:
     predicted = bq.get_dates(PREDICTIONS_TABLE)
     new_days = get_new_days(features, predicted, train_end)
     if new_days.empty:
-        github_notice("Inference: no new feature day", [f"Newest day: {features['date'].max()}"])
+        github_summary("Inference: no new feature day", [f"Newest day: {features['date'].max()}"])
         return
 
     predictions = make_predictions(new_days, champion)
@@ -73,7 +73,7 @@ def main() -> None:
     bq.append(drift, DRIFT_TABLE)
     latest = predictions.iloc[-1]
     drifted = drift.loc[drift["psi"] > drift["threshold"], "feature"].tolist()
-    github_notice(
+    github_summary(
         "Inference: new forecast",
         [
             f"Day: {latest['date']}",

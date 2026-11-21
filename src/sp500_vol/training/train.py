@@ -11,7 +11,7 @@ from sklearn.metrics import mean_absolute_error
 from sp500_vol.common.baselines import get_baselines, get_forecasts
 from sp500_vol.common.bigquery import BigQueryClient
 from sp500_vol.common.config import get_git_commit, get_image, is_github_actions
-from sp500_vol.common.log import github_notice, setup_logging
+from sp500_vol.common.log import github_summary, setup_logging
 from sp500_vol.common.registry import CHAMPION, MODEL_NAME, ModelRegistry, RegisteredModel
 from sp500_vol.common.schema import FEATURE_COLUMNS, LABEL_COLUMN, SNAPSHOT_PREFIX
 from sp500_vol.training.model import fit_model, refit_model, split
@@ -130,9 +130,9 @@ def notify(
         f"Snapshot: {result.params['snapshot']}",
     ]
     if model_version is None:
-        github_notice("Training: no new model", ["Champion unchanged", *details])
+        github_summary("Training: no new model", ["Champion unchanged", *details])
     else:
-        github_notice(
+        github_summary(
             "Training: new model registered", [f"Version {model_version} is champion", *details]
         )
 

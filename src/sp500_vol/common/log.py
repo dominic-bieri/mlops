@@ -1,9 +1,17 @@
 import logging
+import os
+
+logger = logging.getLogger(__name__)
 
 
-# shown on the run page, readable without a GitHub login
-def github_notice(title: str, parts: list[str]) -> None:
-    print(f"::notice title={title}::{' · '.join(parts)}")
+def github_summary(title: str, lines: list[str]) -> None:
+    text = f"### {title}\n\n" + "".join(f"- {line}\n" for line in lines)
+    path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if path is None:
+        logger.info("%s", text)
+        return
+    with open(path, "a") as file:
+        file.write(text + "\n")
 
 
 def setup_logging() -> None:
