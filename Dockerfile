@@ -42,7 +42,7 @@ USER app
 ENTRYPOINT ["streamlit", "run", "ui/app.py", "--server.port=8080", "--server.address=0.0.0.0", \
     "--server.headless=true"]
 
-FROM runtime AS features
+FROM lightgbm AS features
 COPY --from=builder --chown=app:app /app/.venv /app/.venv
 USER app
 ENTRYPOINT ["python", "-m", "sp500_vol.features.pipeline"]
