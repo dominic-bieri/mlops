@@ -13,15 +13,15 @@ It is usually higher than what really happens, because investors pay extra for p
 
 $$\hat{y}_t = \beta_0 + \beta_1 \mathrm{RV}_t^{(1)} + \beta_2 \mathrm{RV}_t^{(5)} + \beta_3 \mathrm{RV}_t^{(22)}$$
 
-- VIX times one factor to remove the risk premium: average label divided by average VIX
+- VIX times one factor to remove the risk premium. The factor is the average label divided by the average VIX
 
 $$c = \frac{\bar{y}}{\overline{\mathrm{VIX}}} \approx 0.8, \qquad \hat{y}_t = c \cdot \mathrm{VIX}_t$$
 
 - No time conversion for the VIX, VIX and label are both in percent per year
 - HAR-RV and the factor are fitted on the same data as the model, never on test
-- Success: lower MAE than HAR-RV on test (last 12 months, ADR 6), instead of 10 % better than the 20-day volatility
+- Success means a lower MAE than HAR-RV on test (last 12 months, ADR 6), instead of 10 % better than the 20-day volatility
 - The scaled VIX is only reported
-- Table per year with model, 20-day volatility, HAR-RV and scaled VIX, fitted on train only, over val and test
+- Table per year with model, 20-day volatility, HAR-RV and scaled VIX, over val and test. Baselines for val fitted on train, for test on train and val
 - Each year split into calm days ($\mathrm{VIX}_t \le 20$) and stressed days ($\mathrm{VIX}_t > 20$)
 - Each training run writes the table to its log
 

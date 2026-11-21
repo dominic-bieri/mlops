@@ -5,7 +5,7 @@
 The label, the 20-day baseline and the VIX comparison need the same volatility.
 With only closing prices, the 5-day label uses just 5 numbers and jumps a lot.
 Tiingo also has open, high and low. They show how much the price moved during the day.
-Common formulas that use them: Parkinson, Garman-Klass, Rogers-Satchell, Yang-Zhang.
+Common formulas that use them are Parkinson, Garman-Klass, Rogers-Satchell and Yang-Zhang.
 I wanted one that is accurate and still simple.
 
 ## Decision
@@ -14,7 +14,7 @@ I wanted one that is accurate and still simple.
 
 $$\sigma^2 = \frac{1}{n}\sum_{i=1}^{n}\left[\left(\ln\frac{O_i}{C_{i-1}}\right)^2 + \frac{1}{2}\left(\ln\frac{H_i}{L_i}\right)^2 - (2\ln 2 - 1)\left(\ln\frac{C_i}{O_i}\right)^2\right]$$
 
-- $O_i, H_i, L_i, C_i$: open, high, low, close of day $i$. On dividend days the dividend is added to $O_i$ (ADR 1)
+- $O_i, H_i, L_i, C_i$ are open, high, low and close of day $i$. On dividend days the dividend is added to $O_i$ (ADR 1)
 - Three parts for each day:
   - Jump over night, from yesterday's close to today's open (e.g. news after the close). Added by Yang-Zhang
   - Move during the day, from low to high. Garman-Klass
@@ -24,9 +24,9 @@ $$\sigma^2 = \frac{1}{n}\sum_{i=1}^{n}\left[\left(\ln\frac{O_i}{C_{i-1}}\right)^
 $$\mathrm{RV}^{(n)} = 100\sqrt{252 \cdot \sigma^2}$$
 
 - 252 trading days per year. $\mathrm{RV} = 20$ means the price moves about 20 % in a normal year
-- Label: volatility of the next 5 days, $y_t = \mathrm{RV}_{t+5}^{(5)}$
+- The label is the volatility of the next 5 days, $y_t = \mathrm{RV}_{t+5}^{(5)}$
 - One function for features (`rv_1d` to `rv_60d`), label (`rv_next_5d`) and baselines (`rv_20d`, HAR-RV), so all have the same scale
-- Why this formula: one value per day, so it works for any window. It has the jump over night, Parkinson and Garman-Klass don't. Simpler than Yang-Zhang, which needs several days at once
+- Why this formula? It gives one value per day, so it works for any window. It has the jump over night, Parkinson and Garman-Klass don't. Simpler than Yang-Zhang, which needs several days at once
 
 ## Consequences
 

@@ -12,10 +12,10 @@ Tiingo's adjusted price (`adjClose`) changes all past prices with every new divi
 
 - Two tables, `vix` and `sp500`, one row per day (`date`)
 - One ingest script decides on each run what to fetch:
-  - Table empty: everything since 1993-01-29 (first SPY trading day)
-  - Table filled: from the latest stored date minus 7 days
+  - If the table is empty, everything since 1993-01-29 (first SPY trading day)
+  - Otherwise from the latest stored date minus 7 days
 - Only days not yet in the table are added, stored rows are never changed (ADR 5)
-- Rows are checked before writing: no missing values, prices above 0, open and close between low and high, no duplicate dates
+- Rows are checked before writing. No missing values, prices above 0, open and close between low and high, no duplicate dates
 - Raw prices and the dividend of the day (`div_cash`), not `adjClose`. Returns add the dividend back
 - No split correction, SPY never had one
 - API clients retry 3 times on 429 and 5xx

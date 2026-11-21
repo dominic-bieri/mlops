@@ -17,7 +17,7 @@ from sp500_vol.common.schema import (
     SP500_TABLE,
     VIX_TABLE,
 )
-from sp500_vol.features.snapshots import delete_old_snapshots
+from sp500_vol.features.snapshots import delete_unused_snapshots
 from sp500_vol.features.validate import check_freshness, validate_features
 
 logger = logging.getLogger(__name__)
@@ -81,7 +81,7 @@ def build_features(sp500: pd.DataFrame, vix: pd.DataFrame) -> pd.DataFrame:
 
 def clean_up_snapshots(bq: BigQueryClient) -> list[str]:
     try:
-        return delete_old_snapshots(bq, datetime.now(UTC))
+        return delete_unused_snapshots(bq)
     except Exception as e:
         logger.exception("snapshot cleanup failed")
         github_warning("Features: snapshot cleanup failed", type(e).__name__)
