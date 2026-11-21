@@ -12,18 +12,19 @@ Live: [UI](https://sp500-vol-ui-udjtjgs5dq-oa.a.run.app) · [API](https://sp500-
 
 - [Proposal](docs/proposal.pdf)
 - [MS2 summary](docs/ms2_summary.pdf)
+- [MS3 summary](docs/ms3_summary.pdf)
 - [ADRs](docs/adr/)
 
 ## Architecture
 
 ![System design](docs/media/System_Design.svg)
 
-- Feature pipeline, daily: loads SPY and VIX into BigQuery, builds the `features` table and a snapshot ([`features/`](src/sp500_vol/features/), [ADR 1](docs/adr/0001-raw-data.md), [ADR 2](docs/adr/0002-feature-store.md))
-- Training pipeline, monthly: trains LightGBM on the newest snapshot, registers it if it beats HAR-RV ([`training/`](src/sp500_vol/training/), [ADR 6](docs/adr/0006-training-and-retraining.md))
-- Inference pipeline, after each feature run: forecasts the new days with `sp500-vol@champion` and checks drift ([`inference/`](src/sp500_vol/inference/), [ADR 7](docs/adr/0007-inference.md))
+- The feature pipeline runs every day. It loads SPY and VIX into BigQuery and builds the `features` table and a snapshot ([`features/`](src/sp500_vol/features/), [ADR 1](docs/adr/0001-raw-data.md), [ADR 2](docs/adr/0002-feature-store.md))
+- The training pipeline runs once a month. It trains LightGBM on the newest snapshot and registers it if it beats HAR-RV ([`training/`](src/sp500_vol/training/), [ADR 6](docs/adr/0006-training-and-retraining.md))
+- The inference pipeline runs after each feature run. It forecasts the new days with `sp500-vol@champion` and checks drift ([`inference/`](src/sp500_vol/inference/), [ADR 7](docs/adr/0007-inference.md))
 - API and UI on Cloud Run, the API serves the stored forecasts ([`ui/app.py`](ui/app.py))
 
-Features, label and table names for all three pipelines: [`common/schema.py`](src/sp500_vol/common/schema.py).
+Features, label and table names for all three pipelines are in [`common/schema.py`](src/sp500_vol/common/schema.py).
 
 ## Pipeline results
 
@@ -45,7 +46,7 @@ cp .env.example .env   # fill in your values
 gcloud auth application-default login
 ```
 
-Google Cloud: [`docs/google-cloud.md`](docs/google-cloud.md), then [`terraform/README.md`](terraform/README.md).
+For Google Cloud see [`docs/google-cloud.md`](docs/google-cloud.md) and then [`terraform/README.md`](terraform/README.md).
 
 ## Usage
 
@@ -59,7 +60,7 @@ uv run pytest
 ```
 
 Local runs only read, only GitHub Actions writes (ADR 2). The pipelines are started by [cron-job.org](https://cron-job.org): features every day, training monthly (ADR 5).
-Backfill: an empty table is filled from 1993, a skipped run is filled by the next one ([ADR 1](docs/adr/0001-raw-data.md)).
+An empty table is filled from 1993 on, and a skipped run is filled by the next one ([ADR 1](docs/adr/0001-raw-data.md)).
 
 ## Docker
 
@@ -73,9 +74,9 @@ docker run --rm --env-file .env \
   sp500-vol-features
 ```
 
-API and UI together: `docker compose up --build`.
+Start API and UI together with `docker compose up --build`.
 
 ## Rollback
 
-- Code: `gcloud run services update-traffic sp500-vol-api --region europe-west6 --to-revisions REVISION=100`, the same for `sp500-vol-ui`
-- Model: set the alias `champion` on the previous version of `sp500-vol` in the Model Registry
+- For bad code, move the traffic back with `gcloud run services update-traffic sp500-vol-api --region europe-west6 --to-revisions REVISION=100`, the same for `sp500-vol-ui`
+- For a bad model, set the alias `champion` on the previous version of `sp500-vol` in the Model Registry
