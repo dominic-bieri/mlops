@@ -1,7 +1,7 @@
 name: Feature pipeline
 
 on:
-  # started by cron-job.org Tue–Sat 10:00 New York time, GitHub's schedule runs hours late (ADR 5)
+  # started by cron-job.org every day 10:00 New York time, GitHub's schedule runs hours late (ADR 5)
   workflow_dispatch:
 
 permissions:
@@ -57,6 +57,7 @@ jobs:
   # tokens from push, schedule and workflow_dispatch (ADR 7)
   predict:
     needs: run
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:

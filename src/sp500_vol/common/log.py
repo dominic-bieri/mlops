@@ -19,6 +19,10 @@ def github_table(title: str, df: pd.DataFrame) -> None:
     write_summary(f"### {title}\n\n" + header + divider + rows)
 
 
+def github_warning(title: str, message: str) -> None:
+    print(f"::warning title={title}::{message}")
+
+
 def write_summary(text: str) -> None:
     path = os.environ.get("GITHUB_STEP_SUMMARY")
     if path is None:

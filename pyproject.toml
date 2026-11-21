@@ -15,6 +15,7 @@ dependencies = [
     "google-cloud-storage==3.17.1",
     "fastapi==0.162.5",
     "uvicorn==0.54.0",
+    "exchange-calendars==4.13.3",
 ]
 
 # the ui image installs only its group, see Dockerfile

@@ -12,11 +12,12 @@ from sp500_vol.common.schema import (
     FEATURES_TABLE,
     HORIZON,
     LABEL_COLUMN,
+    NEW_YORK,
     SNAPSHOT_PREFIX,
     SP500_TABLE,
     VIX_TABLE,
 )
-from sp500_vol.features.validate import validate_features
+from sp500_vol.features.validate import check_freshness, validate_features
 
 logger = logging.getLogger(__name__)
 
@@ -102,6 +103,7 @@ def main() -> None:
         "Features: new snapshot",
         [f"Snapshot: {snapshot}", f"Rows: {len(features)}", f"Newest day: {newest}"],
     )
+    check_freshness(newest, datetime.now(NEW_YORK).date())
 
 
 if __name__ == "__main__":

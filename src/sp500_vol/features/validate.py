@@ -1,10 +1,14 @@
-from datetime import date
+from datetime import date, timedelta
 
+import exchange_calendars
 import pandas as pd
+
+from sp500_vol.common.log import github_warning
 
 PRICE_COLUMNS = ["open", "high", "low", "close"]
 MIN_FEATURE_ROWS = 5000
 MAX_FEATURE_AGE_DAYS = 10
+MAX_TRADING_DAYS_BEHIND = 1
 
 
 def check(df: pd.DataFrame, bad: pd.Series, source: str, reason: str) -> None:
@@ -41,3 +45,22 @@ def validate_features(df: pd.DataFrame, today: date) -> None:
     age = (pd.Timestamp(today) - pd.Timestamp(newest)).days
     if age > MAX_FEATURE_AGE_DAYS:
         raise ValueError(f"features: newest row {newest} is {age} days old")
+
+
+def get_trading_days_behind(newest: date, today: date) -> int:
+    calendar = exchange_calendars.get_calendar("XNYS")
+    last_trading_day = calendar.date_to_session(today - timedelta(days=1), "previous").date()
+    if newest >= last_trading_day:
+        return 0
+    return calendar.sessions_distance(newest, last_trading_day) - 1
+
+
+def check_freshness(newest: date, today: date) -> None:
+    behind = get_trading_days_behind(newest, today)
+    if behind == 0:
+        return
+
+    message = f"newest day {newest}, {behind} trading day(s) missing, no VIX or SPY yet"
+    if behind > MAX_TRADING_DAYS_BEHIND:
+        raise ValueError(f"features: {message}")
+    github_warning("Features: not fresh", message)
