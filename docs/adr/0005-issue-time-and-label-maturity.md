@@ -10,7 +10,10 @@ Runs started with `workflow_dispatch` start within seconds.
 
 ## Decision
 
-- The forecast is made the next morning (Tue–Sat) at 10:00 New York time, after FRED has published the VIX. The market is open by then, but the forecast only uses data up to the previous close
+- Feature pipeline every day at 10:00 New York time
+- Forecast as soon as the features of a day exist, only with data up to the previous close
+- The Friday VIX often comes days later, the daily run picks it up
+- Freshness check on the NYSE calendar: 1 trading day behind is a warning, 2 fail the run
 - The time is set in New York time, so it stays the same in summer and winter
 - Ingest only fetches days up to yesterday in New York time, a row of the running day could be intraday and would never be corrected (ADR 1)
 - [cron-job.org](https://cron-job.org) starts the feature and training workflows with `workflow_dispatch`, no `schedule` in the workflows
@@ -23,6 +26,7 @@ Runs started with `workflow_dispatch` start within seconds.
 
 - No data from the forecast period is used
 - A late or skipped run does no harm, the next run fills the gap (ADR 1)
+- A run that never starts is not caught
 - The schedule is not in the repo, it lives in cron-job.org
 - A leaked token can start, cancel or delete runs, but can't read code or secrets or reach Google Cloud
 - The token has to be renewed once a year

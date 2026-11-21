@@ -6,17 +6,19 @@ import pandas as pd
 
 from sp500_vol.common.bigquery import BigQueryClient
 from sp500_vol.common.config import get_git_commit, is_github_actions
-from sp500_vol.common.log import github_notice, setup_logging
+from sp500_vol.common.log import github_summary, github_warning, setup_logging
 from sp500_vol.common.schema import (
     FEATURE_COLUMNS,
     FEATURES_TABLE,
     HORIZON,
     LABEL_COLUMN,
+    NEW_YORK,
     SNAPSHOT_PREFIX,
     SP500_TABLE,
     VIX_TABLE,
 )
-from sp500_vol.features.validate import validate_features
+from sp500_vol.features.snapshots import delete_old_snapshots
+from sp500_vol.features.validate import check_freshness, validate_features
 
 logger = logging.getLogger(__name__)
 
@@ -57,8 +59,9 @@ def build_spy_features(sp500: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def build_vix_features(vix: pd.DataFrame) -> pd.DataFrame:
-    df = vix.sort_values("date").reset_index(drop=True)
+def build_vix_features(vix: pd.DataFrame, trading_days: pd.Series) -> pd.DataFrame:
+    df = pd.DataFrame({"date": trading_days})
+    df = df.merge(vix[["date", "close"]], on="date", how="left")
     df = df.rename(columns={"close": "vix"})
     df["vix_change_5d"] = df["vix"] - df["vix"].shift(VIX_CHANGE_DAYS)
     return df
@@ -66,14 +69,23 @@ def build_vix_features(vix: pd.DataFrame) -> pd.DataFrame:
 
 def build_features(sp500: pd.DataFrame, vix: pd.DataFrame) -> pd.DataFrame:
     spy_features = build_spy_features(sp500)
-    vix_features = build_vix_features(vix)
+    vix_features = build_vix_features(vix, spy_features["date"])
 
-    df = spy_features.merge(vix_features, on="date", how="inner")
+    df = spy_features.merge(vix_features, on="date", how="left")
 
     df = df.dropna(subset=FEATURE_COLUMNS)
 
     columns = ["date"] + FEATURE_COLUMNS + [LABEL_COLUMN]
     return df[columns].reset_index(drop=True)
+
+
+def clean_up_snapshots(bq: BigQueryClient) -> list[str]:
+    try:
+        return delete_old_snapshots(bq, datetime.now(UTC))
+    except Exception as e:
+        logger.exception("snapshot cleanup failed")
+        github_warning("Features: snapshot cleanup failed", type(e).__name__)
+        return []
 
 
 def get_snapshot_name(built_at: datetime) -> str:
@@ -96,11 +108,18 @@ def main() -> None:
     bq.replace_all(features, FEATURES_TABLE)
     snapshot = get_snapshot_name(datetime.now(UTC))
     bq.create_snapshot(FEATURES_TABLE, snapshot, f"commit {get_git_commit()}")
+    deleted = clean_up_snapshots(bq)
     newest = features["date"].max()
-    github_notice(
+    github_summary(
         "Features: new snapshot",
-        [f"Snapshot: {snapshot}", f"Rows: {len(features)}", f"Newest day: {newest}"],
+        [
+            f"Snapshot: {snapshot}",
+            f"Rows: {len(features)}",
+            f"Newest day: {newest}",
+            f"Deleted snapshots: {', '.join(deleted) or 'none'}",
+        ],
     )
+    check_freshness(newest, datetime.now(NEW_YORK).date())
 
 
 if __name__ == "__main__":

@@ -22,5 +22,7 @@ A model must be traceable to the exact data it was trained on, BigQuery time tra
 
 - A changed formula applies to the whole history, no migration
 - Labels of the last 5 days are filled in by a later run
-- Every version can be read again, about 1 MB each, about 250 snapshots per year, not in Terraform
-- Days without VIX value are dropped, `vix_change_5d` then spans 6 trading days (rare)
+- About 1 MB per snapshot, not in Terraform
+- Snapshots older than 60 days are deleted, unless a model was trained on it. The newest stays
+- `vix_change_5d` on SPY trading days, a VIX on a market holiday is ignored
+- SPY day without VIX: this day and the day 5 later are dropped

@@ -7,6 +7,8 @@ from fake_data import make_data, make_features
 from sp500_vol.features.validate import (
     MAX_FEATURE_AGE_DAYS,
     MIN_FEATURE_ROWS,
+    check_freshness,
+    get_trading_days_behind,
     validate_features,
     validate_spy,
     validate_vix,
@@ -79,3 +81,35 @@ def test_too_few_feature_rows_fail() -> None:
 
     with pytest.raises(ValueError, match="rows"):
         validate_features(features.tail(100), today)
+
+
+@pytest.mark.parametrize(
+    ("newest", "today", "behind"),
+    [
+        (date(2026, 11, 20), date(2026, 11, 21), 0),
+        (date(2026, 11, 20), date(2026, 11, 23), 0),
+        (date(2026, 11, 19), date(2026, 11, 21), 1),
+        (date(2026, 11, 18), date(2026, 11, 21), 2),
+        (date(2026, 11, 25), date(2026, 11, 27), 0),
+        (date(2026, 11, 24), date(2026, 11, 27), 1),
+    ],
+)
+def test_trading_days_behind(newest: date, today: date, behind: int) -> None:
+    assert get_trading_days_behind(newest, today) == behind
+
+
+def test_fresh_features_give_no_warning(capsys: pytest.CaptureFixture) -> None:
+    check_freshness(date(2026, 11, 20), date(2026, 11, 21))
+
+    assert capsys.readouterr().out == ""
+
+
+def test_one_day_behind_gives_a_warning(capsys: pytest.CaptureFixture) -> None:
+    check_freshness(date(2026, 11, 19), date(2026, 11, 21))
+
+    assert capsys.readouterr().out.startswith("::warning title=Features: not fresh::")
+
+
+def test_two_days_behind_fail() -> None:
+    with pytest.raises(ValueError, match="2 trading day"):
+        check_freshness(date(2026, 11, 18), date(2026, 11, 21))

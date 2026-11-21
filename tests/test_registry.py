@@ -87,3 +87,30 @@ def test_model_with_other_features(monkeypatch: pytest.MonkeyPatch) -> None:
     files = {"model.txt": model_text(other), "metadata.json": "{}"}
 
     assert fake_registry(monkeypatch, files).load(CHAMPION) is None
+
+
+def test_used_snapshots_come_from_version_labels(monkeypatch: pytest.MonkeyPatch) -> None:
+    labels = {"1": {"snapshot": "features_a"}, "2": {}, "3": {"snapshot": "features_b"}}
+
+    class FakeVersion:
+        resource_name = "models/1"
+
+        def __init__(self, name: str) -> None:
+            self.labels = labels[name.split("@")[1]]
+
+        @staticmethod
+        def list(filter: str) -> list:
+            return [FakeVersion]
+
+    class FakeModelRegistry:
+        def __init__(self, model: str) -> None:
+            pass
+
+        def list_versions(self) -> list[SimpleNamespace]:
+            return [SimpleNamespace(version_id=version) for version in labels]
+
+    model_registry = fake_registry(monkeypatch, {})
+    monkeypatch.setattr(registry.aiplatform, "Model", FakeVersion)
+    monkeypatch.setattr(registry.aiplatform.models, "ModelRegistry", FakeModelRegistry)
+
+    assert model_registry.get_used_snapshots() == {"features_a", "features_b"}

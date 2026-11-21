@@ -4,6 +4,7 @@ import pandas as pd
 import requests
 
 from sp500_vol.common.config import get_fred_api_key
+from sp500_vol.features.http import get_session
 
 BASE_URL = "https://api.stlouisfed.org/fred/series/observations"
 
@@ -19,7 +20,8 @@ def fetch_vix(start: date, end: date) -> pd.DataFrame:
 
     # own errors, URL contains API key
     try:
-        response = requests.get(BASE_URL, params=params, timeout=30)
+        with get_session() as session:
+            response = session.get(BASE_URL, params=params, timeout=30)
     except requests.RequestException as e:
         error_type = type(e).__name__
         raise RuntimeError(f"FRED request failed: {error_type}") from None
