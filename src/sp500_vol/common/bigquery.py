@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 import pandas as pd
 from google.cloud import bigquery
@@ -47,15 +47,22 @@ class BigQueryClient:
         self.client.query(sql).result()
 
     def get_latest_snapshot(self, prefix: str) -> str:
+        snapshots = self.get_snapshots(prefix)
+        if not snapshots:
+            raise ValueError(f"no snapshot {prefix}*, run the feature pipeline first")
+        return max(snapshots)
+
+    def get_snapshots(self, prefix: str) -> dict[str, datetime]:
         dataset_id = f"{self.project}.{self.dataset}"
 
-        names = []
+        snapshots = {}
         for table in self.client.list_tables(dataset_id):
             if table.table_type == "SNAPSHOT" and table.table_id.startswith(prefix):
-                names.append(table.table_id)
-        if not names:
-            raise ValueError(f"no snapshot {prefix}*, run the feature pipeline first")
-        return max(names)
+                snapshots[table.table_id] = table.created
+        return snapshots
+
+    def delete_snapshot(self, snapshot: str) -> None:
+        self.client.delete_table(self.get_table_id(snapshot))
 
     def load(self, df: pd.DataFrame, table: str, write_disposition: str) -> None:
         # empty replace would wipe the table

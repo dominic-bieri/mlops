@@ -79,7 +79,8 @@ gcloud storage buckets add-iam-policy-binding gs://$PROJECT_ID-tfstate \
 Needs `PROJECT_ID` and `PRINCIPAL` from above.
 
 ```bash
-for ROLE in roles/bigquery.jobUser roles/bigquery.dataEditor; do
+# aiplatform.viewer: reads the snapshot label of the model versions, to keep their snapshots (ADR 2)
+for ROLE in roles/bigquery.jobUser roles/bigquery.dataEditor roles/aiplatform.viewer; do
   gcloud projects add-iam-policy-binding $PROJECT_ID \
     --member="$PRINCIPAL/feature-pipeline" --role="$ROLE" --condition=None
 done
@@ -88,6 +89,7 @@ done
 | Name | Type | Value |
 |---|---|---|
 | `GCP_PROJECT_ID` | variable | `YOUR_PROJECT_ID` |
+| `GCP_REGION` | variable | same as `terraform` |
 | `GCP_WORKLOAD_IDENTITY_PROVIDER` | variable | same as `terraform` |
 | `FRED_API_KEY` | secret | your FRED key |
 | `TIINGO_API_KEY` | secret | your Tiingo key |

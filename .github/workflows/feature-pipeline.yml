@@ -25,6 +25,7 @@ jobs:
       FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
       TIINGO_API_KEY: ${{ secrets.TIINGO_API_KEY }}
       GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION }}
       BQ_DATASET: sp500_vol
       IMAGE: ghcr.io/${{ github.repository_owner }}/sp500-vol-features:${{ github.sha }}
     steps:
@@ -46,7 +47,7 @@ jobs:
       - name: Ingest VIX and SPY, build features
         run: >-
           docker run --rm
-          -e FRED_API_KEY -e TIINGO_API_KEY -e GCP_PROJECT_ID -e BQ_DATASET
+          -e FRED_API_KEY -e TIINGO_API_KEY -e GCP_PROJECT_ID -e GCP_REGION -e BQ_DATASET
           -e GITHUB_ACTIONS -e GITHUB_SHA
           -v "$GITHUB_STEP_SUMMARY:/summary.md" -e GITHUB_STEP_SUMMARY=/summary.md
           -v "$GOOGLE_APPLICATION_CREDENTIALS:/creds/adc.json:ro"

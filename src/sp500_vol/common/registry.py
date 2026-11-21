@@ -82,6 +82,17 @@ class ModelRegistry:
         )
         return registered.version_id
 
+    def get_used_snapshots(self) -> set[str]:
+        parent = self._get_parent()
+        if parent is None:
+            return set()
+        snapshots = set()
+        for info in aiplatform.models.ModelRegistry(parent).list_versions():
+            version = aiplatform.Model(f"{parent}@{info.version_id}")
+            if "snapshot" in version.labels:
+                snapshots.add(version.labels["snapshot"])
+        return snapshots
+
     def _upload(self, path: str, text: str) -> None:
         self.bucket.blob(path).upload_from_string(text)
 
