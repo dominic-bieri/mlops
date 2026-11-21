@@ -18,6 +18,7 @@ Tiingo's adjusted price (`adjClose`) changes all past prices with every new divi
 - Rows are checked before writing: no missing values, prices above 0, open and close between low and high, no duplicate dates
 - Raw prices and the dividend of the day (`div_cash`), not `adjClose`. Returns add the dividend back
 - No split correction, SPY never had one
+- API clients retry 3 times on 429 and 5xx
 
 ## Consequences
 

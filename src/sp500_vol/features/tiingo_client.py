@@ -2,9 +2,9 @@ from datetime import date
 from typing import Any
 
 import pandas as pd
-import requests
 
 from sp500_vol.common.config import get_tiingo_api_key
+from sp500_vol.features.http import get_session
 
 BASE_URL = "https://api.tiingo.com/tiingo/daily"
 
@@ -18,7 +18,8 @@ def fetch_spy(start: date, end: date) -> pd.DataFrame:
     # header keeps token out of logs
     headers = {"Authorization": f"Token {get_tiingo_api_key()}"}
 
-    response = requests.get(url, params=params, headers=headers, timeout=30)
+    with get_session() as session:
+        response = session.get(url, params=params, headers=headers, timeout=30)
     response.raise_for_status()
 
     data = response.json()
