@@ -84,6 +84,13 @@ for ROLE in roles/bigquery.jobUser roles/bigquery.dataEditor roles/aiplatform.vi
   gcloud projects add-iam-policy-binding $PROJECT_ID \
     --member="$PRINCIPAL/feature-pipeline" --role="$ROLE" --condition=None
 done
+
+# dataEditor can't delete snapshots, only this one permission (ADR 2)
+gcloud iam roles create snapshotDeleter --project=$PROJECT_ID \
+  --title="Snapshot deleter" --permissions=bigquery.tables.deleteSnapshot
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="$PRINCIPAL/feature-pipeline" \
+  --role="projects/$PROJECT_ID/roles/snapshotDeleter" --condition=None
 ```
 
 | Name | Type | Value |
