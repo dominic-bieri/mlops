@@ -57,8 +57,9 @@ def build_spy_features(sp500: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def build_vix_features(vix: pd.DataFrame) -> pd.DataFrame:
-    df = vix.sort_values("date").reset_index(drop=True)
+def build_vix_features(vix: pd.DataFrame, trading_days: pd.Series) -> pd.DataFrame:
+    df = pd.DataFrame({"date": trading_days})
+    df = df.merge(vix[["date", "close"]], on="date", how="left")
     df = df.rename(columns={"close": "vix"})
     df["vix_change_5d"] = df["vix"] - df["vix"].shift(VIX_CHANGE_DAYS)
     return df
@@ -66,9 +67,9 @@ def build_vix_features(vix: pd.DataFrame) -> pd.DataFrame:
 
 def build_features(sp500: pd.DataFrame, vix: pd.DataFrame) -> pd.DataFrame:
     spy_features = build_spy_features(sp500)
-    vix_features = build_vix_features(vix)
+    vix_features = build_vix_features(vix, spy_features["date"])
 
-    df = spy_features.merge(vix_features, on="date", how="inner")
+    df = spy_features.merge(vix_features, on="date", how="left")
 
     df = df.dropna(subset=FEATURE_COLUMNS)
 

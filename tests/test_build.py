@@ -6,6 +6,7 @@ from sp500_vol.common.schema import FEATURE_COLUMNS, HORIZON, LABEL_COLUMN
 from sp500_vol.features import build
 from sp500_vol.features.build import (
     RV_WINDOWS,
+    VIX_CHANGE_DAYS,
     build_features,
     build_spy_features,
     daily_variance,
@@ -87,6 +88,35 @@ def test_without_intraday_move_variance_is_squared_return() -> None:
     assert daily_variance(sp500).iloc[1:].to_numpy() == pytest.approx(
         (df["log_return"] ** 2).iloc[1:].to_numpy()
     )
+
+
+def test_vix_on_a_market_holiday_does_not_shorten_the_change() -> None:
+    sp500, vix = make_data()
+    holiday = pd.DataFrame({"date": [pd.Timestamp("2024-03-30").date()], "close": [99.0]})
+    vix_with_holiday = pd.concat([vix, holiday]).sort_values("date")
+
+    df = build_features(sp500, vix_with_holiday).set_index("date")
+
+    expected = build_features(sp500, vix).set_index("date")
+    assert df["vix_change_5d"].equals(expected["vix_change_5d"])
+    first_day = df.index[0]
+    five_days_before = sp500.loc[sp500["date"] < first_day, "date"].iloc[-VIX_CHANGE_DAYS]
+    vix_by_day = vix.set_index("date")["close"]
+    assert df.loc[first_day, "vix_change_5d"] == pytest.approx(
+        vix_by_day[first_day] - vix_by_day[five_days_before]
+    )
+
+
+def test_missing_vix_day_drops_that_day_and_the_day_five_later() -> None:
+    sp500, vix = make_data()
+    missing = sp500.loc[70, "date"]
+
+    df = build_features(sp500, vix[vix["date"] != missing])
+
+    dates = set(df["date"])
+    assert missing not in dates
+    assert sp500.loc[70 + VIX_CHANGE_DAYS, "date"] not in dates
+    assert sp500.loc[71, "date"] in dates
 
 
 class FakeBigQuery:
