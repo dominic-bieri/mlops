@@ -57,3 +57,16 @@ def test_train_and_evaluate_beats_20_day_baseline() -> None:
 
     assert result.model.booster_.num_trees() == result.params["trees"]
     assert result.metadata["test_mae"]["model"] < result.metadata["test_mae"]["rv_20d"]
+
+
+def test_errors_by_year_has_split_and_day_counts() -> None:
+    features = make_features(2000, seed=1, start="2018-01-01")
+
+    result = train_and_evaluate(features, "features_test")
+
+    table = result.errors_by_year
+    assert set(table["split"]) == {"val", "test"}
+    assert set(table["days"]) <= {"calm", "stressed"}
+    test_rows = table[table["split"] == "test"]
+    assert test_rows["n"].sum() == len(result.test)
+    assert {"model", "har_rv", "n"} <= set(table.columns)

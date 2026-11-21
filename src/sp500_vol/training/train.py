@@ -11,7 +11,7 @@ from sklearn.metrics import mean_absolute_error
 from sp500_vol.common.baselines import get_baselines, get_forecasts
 from sp500_vol.common.bigquery import BigQueryClient
 from sp500_vol.common.config import get_git_commit, get_image, is_github_actions
-from sp500_vol.common.log import github_summary, setup_logging
+from sp500_vol.common.log import github_summary, github_table, setup_logging
 from sp500_vol.common.registry import CHAMPION, MODEL_NAME, ModelRegistry, RegisteredModel
 from sp500_vol.common.schema import FEATURE_COLUMNS, LABEL_COLUMN, SNAPSHOT_PREFIX
 from sp500_vol.training.model import fit_model, refit_model, split
@@ -28,17 +28,24 @@ class TrainingResult:
     params: dict
     test: pd.DataFrame
     metadata: dict
+    errors_by_year: pd.DataFrame
 
 
 def get_errors(df: pd.DataFrame, booster: lgb.Booster, baselines: dict) -> pd.DataFrame:
     return get_forecasts(df, booster, baselines).sub(df[LABEL_COLUMN], axis=0).abs()
 
 
-def get_errors_by_year(df: pd.DataFrame, booster: lgb.Booster, baselines: dict) -> pd.DataFrame:
+def get_errors_by_year(
+    df: pd.DataFrame, booster: lgb.Booster, baselines: dict, split_name: str
+) -> pd.DataFrame:
     errors = get_errors(df, booster, baselines)
+    errors["split"] = split_name
     errors["year"] = pd.to_datetime(df["date"]).dt.year
     errors["days"] = np.where(df["vix"] > VIX_STRESSED, "stressed", "calm")
-    return errors.groupby(["year", "days"]).mean().round(2)
+    groups = errors.groupby(["split", "year", "days"])
+    table = groups.mean().round(2)
+    table["n"] = groups.size()
+    return table.reset_index()
 
 
 def get_current_mae(current: RegisteredModel | None, test: pd.DataFrame) -> float | None:
@@ -75,14 +82,15 @@ def train_and_evaluate(features: pd.DataFrame, snapshot: str) -> TrainingResult:
 
     # fitted on train, val only chooses the trees (ADR 4)
     tuned = fit_model(train, val)
-    unseen = pd.concat([val, test])
-    errors_by_year = get_errors_by_year(unseen, tuned.booster_, get_baselines(train))
-    logger.info("mae per year:\n%s", errors_by_year.to_string())
+    val_errors = get_errors_by_year(val, tuned.booster_, get_baselines(train), "val")
 
     train_val = pd.concat([train, val])
     model = refit_model(train_val, tuned.best_iteration_)
     baselines = get_baselines(train_val)
     errors = get_errors(test, model.booster_, baselines)
+    test_errors = get_errors_by_year(test, model.booster_, baselines, "test")
+    errors_by_year = pd.concat([val_errors, test_errors], ignore_index=True)
+    logger.info("mae per year:\n%s", errors_by_year.to_string(index=False))
     params = {
         "snapshot": snapshot,
         "git_commit": get_git_commit(),
@@ -99,7 +107,7 @@ def train_and_evaluate(features: pd.DataFrame, snapshot: str) -> TrainingResult:
     logger.info(
         "test mae: %s", {key: round(value, 4) for key, value in metadata["test_mae"].items()}
     )
-    return TrainingResult(model, params, test, metadata)
+    return TrainingResult(model, params, test, metadata, errors_by_year)
 
 
 def register(registry: ModelRegistry, result: TrainingResult, run_name: str) -> str:
@@ -135,6 +143,7 @@ def notify(
         github_summary(
             "Training: new model registered", [f"Version {model_version} is champion", *details]
         )
+    github_table(f"MAE per year, stressed: VIX above {VIX_STRESSED}", result.errors_by_year)
 
 
 def track_and_register(result: TrainingResult) -> None:
